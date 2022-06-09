@@ -1854,8 +1854,13 @@ gst_ttml_render_render_element_backgrounds(GstTtmlRender * render, const GstSubt
           PANGO_PIXELS (line_pos.y));
 
       line_start = PANGO_PIXELS (line_pos.x) - horiz_offset;
-      line_end = (PANGO_PIXELS (line_pos.x) + line_extents.width)
-        - horiz_offset;
+      line_end = (PANGO_PIXELS(line_pos.x) + line_extents.width);
+
+      //for right-to-left text
+      if (line_extents.width < 0)
+          line_end += horiz_offset;
+      else
+          line_end -= horiz_offset;
 
       GST_CAT_LOG (ttmlrender, "line_extents.x:%d  line_extents.y:%d  "
           "line_extents.width:%d  line_extents.height:%d", line_extents.x,
