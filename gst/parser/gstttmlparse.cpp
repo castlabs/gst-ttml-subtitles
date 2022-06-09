@@ -1627,6 +1627,9 @@ handle_buffer(GstTtmlParse* self, GstBuffer* buf)
         auto subtitleList = ttmlParser.getSubtitleList();
         for(int subtitleIndex = 0; subtitleIndex < subtitleList.size(); ++subtitleIndex)
         {            
+            if (self->segment.position > GST_BUFFER_PTS(subtitleList[subtitleIndex]))
+                continue;
+            self->segment.position = GST_BUFFER_PTS(subtitleList[subtitleIndex]);
             ret = gst_pad_push(self->srcpad, subtitleList[subtitleIndex]);
             if(ret == GST_FLOW_OK && subtitleIndex == subtitleList.size() - 1) {
                 //notify that renderer shouldn't expect more subtitle buffers
@@ -1787,6 +1790,7 @@ gst_ttml_parse_sink_event(GstPad* pad, GstObject* parent, GstEvent* event)
          * seek request and instead send us a newsegment from the seek request
          * it received via its video pads instead, so all is fine then too) */
         ret = TRUE;
+        self->need_segment = TRUE;
         gst_event_unref(event);
         break;
     }
