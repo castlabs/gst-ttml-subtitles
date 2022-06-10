@@ -1431,134 +1431,128 @@ gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
     guint max_width, PangoAlignment alignment, guint line_height,
     guint max_font_size, gboolean wrap, timedText::TextOutline text_outline)
 {
-    GstTtmlRenderClass* renderClass;
-    GstTtmlRenderRenderedText* ret;
-    cairo_surface_t* surface, * cropped_surface;
-    cairo_t* cairo_state, * cropped_state;
-    GstMapInfo map;
-    PangoRectangle logical_rect;
-    gint spacing = 0;
-    guint buf_width, buf_height;
-    gint stride;
-    gint max_rendered_line_height = 0;
-    gint min_ascender_offset = G_MAXINT;
-    gint i;
+  GstTtmlRenderClass * renderClass;
+  GstTtmlRenderRenderedText *ret;
+  cairo_surface_t *surface, *cropped_surface;
+  cairo_t *cairo_state, *cropped_state;
+  GstMapInfo map;
+  PangoRectangle logical_rect;
+  gint spacing = 0;
+  guint buf_width, buf_height;
+  gint stride;
+  gint max_rendered_line_height = 0;
+  gint min_ascender_offset = G_MAXINT;
+  gint i;
 
-    ret = g_slice_new0(GstTtmlRenderRenderedText);
-    ret->text_image = gst_ttml_render_rendered_image_new_empty();
+  ret = g_slice_new0 (GstTtmlRenderRenderedText);
+  ret->text_image = gst_ttml_render_rendered_image_new_empty ();
 
-    renderClass = GST_TTML_RENDER_GET_CLASS(render);
-    ret->layout = pango_layout_new(renderClass->pango_context);
+  class = GST_TTML_RENDER_GET_CLASS (render);
+  ret->layout = pango_layout_new (class->pango_context);
 
-    pango_layout_set_markup(ret->layout, text, strlen(text));
-    GST_CAT_DEBUG(ttmlrender, "Layout text: %s",
-        pango_layout_get_text(ret->layout));
-    if(wrap) {
-        pango_layout_set_width(ret->layout, max_width * PANGO_SCALE);
-        pango_layout_set_wrap(ret->layout, PANGO_WRAP_WORD_CHAR);
-    }
-    else {
-        pango_layout_set_width(ret->layout, -1);
-    }
+  pango_layout_set_markup (ret->layout, text, strlen (text));
+  GST_CAT_DEBUG (ttmlrender, "Layout text: %s",
+      pango_layout_get_text (ret->layout));
+  if (wrap) {
+    pango_layout_set_width (ret->layout, max_width * PANGO_SCALE);
+    pango_layout_set_wrap (ret->layout, PANGO_WRAP_WORD_CHAR);
+  } else {
+    pango_layout_set_width (ret->layout, -1);
+  }
 
-    pango_layout_set_alignment(ret->layout, alignment);
-    pango_layout_get_pixel_extents(ret->layout, NULL, &logical_rect);
+  pango_layout_set_alignment (ret->layout, alignment);
+  pango_layout_get_pixel_extents (ret->layout, NULL, &logical_rect);
+  for (i = 0; i < pango_layout_get_line_count (ret->layout); ++i) {
+    PangoLayoutLine *line = pango_layout_get_line_readonly (ret->layout, i);
+    PangoRectangle r, ink;
+    pango_layout_line_get_pixel_extents (line, &ink, &r);
+    max_rendered_line_height = MAX (max_rendered_line_height, r.height);
+    min_ascender_offset = MIN (min_ascender_offset, ink.y - r.y);
+  }
 
-    for(i = 0; i < pango_layout_get_line_count(ret->layout); ++i) {
-        PangoLayoutLine* line = pango_layout_get_line_readonly(ret->layout, i);
-        PangoRectangle r, ink;
-        pango_layout_line_get_pixel_extents(line, &ink, &r);
-        max_rendered_line_height = MAX(max_rendered_line_height, r.height);
-        min_ascender_offset = MIN(min_ascender_offset, ink.y - r.y);
-    }
+  GST_CAT_LOG (ttmlrender, "Max. rendered line height: %d",
+      max_rendered_line_height);
+  GST_CAT_LOG (ttmlrender, "Min. ascender offset: %d", min_ascender_offset);
+  GST_CAT_LOG (ttmlrender, "Requested line_height: %u", line_height);
+  spacing = line_height - max_rendered_line_height;
+  pango_layout_set_spacing (ret->layout, PANGO_SCALE * spacing);
+  GST_CAT_LOG (ttmlrender, "Line spacing set to %d",
+      pango_layout_get_spacing (ret->layout) / PANGO_SCALE);
 
-    GST_CAT_LOG(ttmlrender, "Max. rendered line height: %d",
-        max_rendered_line_height);
-    GST_CAT_LOG(ttmlrender, "Min. ascender offset: %d", min_ascender_offset);
-    GST_CAT_LOG(ttmlrender, "Requested line_height: %u", line_height);
-    spacing = line_height - max_rendered_line_height;
-    pango_layout_set_spacing(ret->layout, PANGO_SCALE * spacing);
-    GST_CAT_LOG(ttmlrender, "Line spacing set to %d",
-        pango_layout_get_spacing(ret->layout) / PANGO_SCALE);
+  pango_layout_get_pixel_extents (ret->layout, NULL, &logical_rect);
+  GST_CAT_DEBUG (ttmlrender, "logical_rect.x: %d   logical_rect.y: %d   "
+      "logical_rect.width: %d   logical_rect.height: %d", logical_rect.x,
+      logical_rect.y, logical_rect.width, logical_rect.height);
 
-    pango_layout_get_pixel_extents(ret->layout, NULL, &logical_rect);
-    GST_CAT_DEBUG(ttmlrender, "logical_rect.x: %d   logical_rect.y: %d   "
-        "logical_rect.width: %d   logical_rect.height: %d", logical_rect.x,
-        logical_rect.y, logical_rect.width, logical_rect.height);
-
-    /* Create surface for pango layout to render into. */
-    surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-        (logical_rect.x + logical_rect.width),
-        (logical_rect.y + logical_rect.height));
-    cairo_state = cairo_create(surface);
-    cairo_set_operator(cairo_state, CAIRO_OPERATOR_CLEAR);
-    cairo_paint(cairo_state);
-    cairo_set_operator(cairo_state, CAIRO_OPERATOR_OVER);
+  /* Create surface for pango layout to render into. */
+  surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+      (logical_rect.x + logical_rect.width),
+      (logical_rect.y + logical_rect.height));
+  cairo_state = cairo_create (surface);
+  cairo_set_operator (cairo_state, CAIRO_OPERATOR_CLEAR);
+  cairo_paint (cairo_state);
+  cairo_set_operator (cairo_state, CAIRO_OPERATOR_OVER);
 
     /* Render layout. */    
-    
-    if(!textOutlineIsDefault(text_outline))
-    {
-        pango_cairo_layout_path(cairo_state, ret->layout);
+  if (!textOutlineIsDefault(text_outline)) {
+    pango_cairo_layout_path(cairo_state, ret->layout);
 
-        guint8 a = text_outline.colorARGB >> 24;
-        guint8 r = (text_outline.colorARGB >> 16) & 0xFF;
-        guint8 g = (text_outline.colorARGB >> 8) & 0xFF;
-        guint8 b = text_outline.colorARGB & 0xFF;
+    guint8 a = text_outline.colorARGB >> 24;
+    guint8 r = (text_outline.colorARGB >> 16) & 0xFF;
+    guint8 g = (text_outline.colorARGB >> 8) & 0xFF;
+    guint8 b = text_outline.colorARGB & 0xFF;
 
-        timedText::PointPx screenSize(render->width, render->height);
-        cairo_set_source_rgba(cairo_state, r, g, b, a);
-        cairo_set_line_width(cairo_state, text_outline.thickness.toPixel(screenSize));
-        cairo_stroke(cairo_state);
-        pango_cairo_update_layout(cairo_state, ret->layout);
+    timedText::PointPx screenSize(render->width, render->height);
+    cairo_set_source_rgba(cairo_state, r, g, b, a);
+    cairo_set_line_width(cairo_state, text_outline.thickness.toPixel(screenSize));
+    cairo_stroke(cairo_state);
+    pango_cairo_update_layout(cairo_state, ret->layout);
 
-        blur_image_surface(surface, text_outline.blurRadius.toPixel(screenSize));
-        cairo_fill(cairo_state);
-    }
+    blur_image_surface(surface, text_outline.blurRadius.toPixel(screenSize));
+    cairo_fill(cairo_state);
+  }
 
-    cairo_save(cairo_state);
-    //---------------------------------
+  cairo_save (cairo_state);
+  pango_cairo_show_layout (cairo_state, ret->layout);
+  cairo_restore (cairo_state);
 
-    pango_cairo_show_layout (cairo_state, ret->layout);
-    cairo_restore (cairo_state);
+  buf_width = logical_rect.width;
+  buf_height = logical_rect.height - min_ascender_offset;
+  GST_CAT_DEBUG (ttmlrender, "Output buffer width: %u  height: %u",
+      buf_width, buf_height);
 
-    buf_width = logical_rect.width;
-    buf_height = logical_rect.height - min_ascender_offset;
-    GST_CAT_DEBUG (ttmlrender, "Output buffer width: %u  height: %u",
-        buf_width, buf_height);
-
-    /* Depending on whether the text is wrapped and its alignment, the image
-    * created by rendering a PangoLayout will contain more than just the
-    * rendered text: it may also contain blankspace around the rendered text.
-    * The following code crops blankspace from around the rendered text,
-    * returning only the rendered text itself in a GstBuffer. */
-    ret->text_image->image =
+  /* Depending on whether the text is wrapped and its alignment, the image
+   * created by rendering a PangoLayout will contain more than just the
+   * rendered text: it may also contain blankspace around the rendered text.
+   * The following code crops blankspace from around the rendered text,
+   * returning only the rendered text itself in a GstBuffer. */
+  ret->text_image->image =
     gst_buffer_new_allocate (NULL, 4 * buf_width * buf_height, NULL);
-    gst_buffer_memset (ret->text_image->image, 0, 0U, 4 * buf_width * buf_height);
-    gst_buffer_map (ret->text_image->image, &map, GST_MAP_READWRITE);
+  gst_buffer_memset (ret->text_image->image, 0, 0U, 4 * buf_width * buf_height);
+  gst_buffer_map (ret->text_image->image, &map, GST_MAP_READWRITE);    gst_buffer_map (ret->text_image->image, &map, GST_MAP_READWRITE);
 
-    stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, buf_width);
-    cropped_surface =
+  stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, buf_width);
+  cropped_surface =
     cairo_image_surface_create_for_data (
         map.data, CAIRO_FORMAT_ARGB32, buf_width,
         buf_height, stride);
-    cropped_state = cairo_create (cropped_surface);
-    cairo_set_source_surface (cropped_state, surface, -logical_rect.x,
-        -(logical_rect.y + min_ascender_offset));
-    cairo_rectangle (cropped_state, 0, 0, buf_width, buf_height);
-    cairo_fill (cropped_state);
+  cropped_state = cairo_create (cropped_surface);
+  cairo_set_source_surface (cropped_state, surface, -logical_rect.x,
+      -(logical_rect.y + min_ascender_offset));
+  cairo_rectangle (cropped_state, 0, 0, buf_width, buf_height);
+  cairo_fill (cropped_state);
 
-    cairo_destroy (cairo_state);
-    cairo_surface_destroy (surface);
-    cairo_destroy (cropped_state);
-    cairo_surface_destroy (cropped_surface);
-    gst_buffer_unmap (ret->text_image->image, &map);
+  cairo_destroy (cairo_state);
+  cairo_surface_destroy (surface);
+  cairo_destroy (cropped_state);
+  cairo_surface_destroy (cropped_surface);
+  gst_buffer_unmap (ret->text_image->image, &map);
 
-    ret->text_image->width = buf_width;
-    ret->text_image->height = buf_height;
-    ret->horiz_offset = logical_rect.x;
+  ret->text_image->width = buf_width;
+  ret->text_image->height = buf_height;
+  ret->horiz_offset = logical_rect.x;
 
-    return ret;
+  return ret;
 }
 
 
