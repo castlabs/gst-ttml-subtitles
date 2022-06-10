@@ -1447,8 +1447,8 @@ gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
   ret = g_slice_new0 (GstTtmlRenderRenderedText);
   ret->text_image = gst_ttml_render_rendered_image_new_empty ();
 
-  class = GST_TTML_RENDER_GET_CLASS (render);
-  ret->layout = pango_layout_new (class->pango_context);
+  renderClass = GST_TTML_RENDER_GET_CLASS (render);
+  ret->layout = pango_layout_new (renderClass->pango_context);
 
   pango_layout_set_markup (ret->layout, text, strlen (text));
   GST_CAT_DEBUG (ttmlrender, "Layout text: %s",
@@ -1493,7 +1493,7 @@ gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
   cairo_paint (cairo_state);
   cairo_set_operator (cairo_state, CAIRO_OPERATOR_OVER);
 
-    /* Render layout. */    
+  /* Render layout. */    
   if (!textOutlineIsDefault(text_outline)) {
     pango_cairo_layout_path(cairo_state, ret->layout);
 
