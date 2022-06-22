@@ -73,6 +73,9 @@ enum
   PROP_VIDEOFPS
 };
 
+typedef enum {
+    GST_BUFFER_FLAG_ONLY_FORCED_TEXT = GstBufferFlags::GST_BUFFER_FLAG_LAST << 1,
+} GstBufferFlagsCustom;
 
 static void
 gst_ttml_parse_set_property (GObject * object, guint prop_id,
@@ -1594,7 +1597,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
   if (g_strcmp0 (self->subtitle_codec, "EBUTT") == 0) {
     GList *subtitle;
     SubtitleParser::Parser ttmlParser;
-    if (ttmlParser.Parse(self->textbuf->str, timedText::SubtitlesFormat::TTML) == CLC_FAIL) {
+    if (ttmlParser.Parse(self->textbuf->str, timedText::SubtitlesFormat::TTML, GST_BUFFER_FLAG_IS_SET(buf, GST_BUFFER_FLAG_ONLY_FORCED_TEXT)) == CLC_FAIL) {
         GstEvent* event = gst_event_new_gap(GST_BUFFER_PTS(buf), GST_BUFFER_DURATION(buf));
         gst_pad_push_event(self->srcpad, event);
         return GST_FLOW_OK;

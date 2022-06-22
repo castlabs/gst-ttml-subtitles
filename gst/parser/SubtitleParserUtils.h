@@ -56,6 +56,8 @@ namespace SubtitleParserUtils
 		ScenesHandler() = delete;
 		ScenesHandler(const timedText::SubtitlesPool& pool) : pool(pool), trackId(pool.getCurrentTrackIndex()) {}
 
+		void setDisplayOnlyForced(bool value) { isDisplayOnlyForced = value; }
+
 		clc_Result createScenes();
 
 		std::vector<GstBuffer*> getScenesBuffersList();
@@ -71,5 +73,6 @@ namespace SubtitleParserUtils
 		const timedText::SubtitlesPool& pool;
 		std::vector<std::unique_ptr<Scene>> scenes;
 		const size_t trackId;
+		bool isDisplayOnlyForced = false;
 	};
 }

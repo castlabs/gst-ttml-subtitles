@@ -338,6 +338,9 @@ SubtitleConstList ScenesHandler::getCuesAtTimeUs(int64_t timeUs)
 	for(int cueIndex = 0; cueIndex < pool.getNumberOfCues(this->trackId); ++cueIndex)
 	{
 		auto cue = this->pool.getCueAtIndex(this->trackId, cueIndex);
+		if(isDisplayOnlyForced && !cue->isDisplayForced)
+			continue;
+
 		if(cue->startUs <= timeUs && timeUs < cue->endUs())
 			cues.push_back(cue);
 	}
