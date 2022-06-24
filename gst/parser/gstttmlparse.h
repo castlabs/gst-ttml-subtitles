@@ -108,6 +108,8 @@ struct _GstTtmlParse {
 
   /* used by frame based parsers */
   gint fps_n, fps_d;
+
+  gboolean forcedOnly = FALSE;
 };
 
 struct _GstTtmlParseClass {

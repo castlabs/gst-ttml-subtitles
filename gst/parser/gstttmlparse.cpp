@@ -70,7 +70,8 @@ enum
 {
   PROP_0,
   PROP_ENCODING,
-  PROP_VIDEOFPS
+  PROP_VIDEOFPS,
+  PROP_FORCED_ONLY
 };
 
 typedef enum {
@@ -194,6 +195,11 @@ gst_ttml_parse_class_init (GstTtmlParseClass * klass)
           "and the subtitle format requires it subtitles may be out of sync.",
           0, 1, G_MAXINT, 1, 24000, 1001,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
+  g_object_class_install_property(object_class, PROP_FORCED_ONLY,
+      g_param_spec_boolean("only-forced-subtitles", "show only forced subtitles",
+          "Skip all subtitles with no forced flag", FALSE,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 }
 
 static void
@@ -363,6 +369,12 @@ gst_ttml_parse_set_property (GObject * object, guint prop_id,
         ttmlparse->state.fps_d = ttmlparse->fps_d;
       }
       break;
+    }
+    case PROP_FORCED_ONLY:
+    {
+        ttmlparse->forcedOnly = g_value_get_boolean(value);
+        GST_DEBUG_OBJECT(object, "video framerate set to %s\n", 
+            ttmlparse->forcedOnly ? "true" : "false");
     }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1597,7 +1609,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
   if (g_strcmp0 (self->subtitle_codec, "EBUTT") == 0) {
     GList *subtitle;
     SubtitleParser::Parser ttmlParser;
-    if (ttmlParser.Parse(self->textbuf->str, timedText::SubtitlesFormat::TTML, GST_BUFFER_FLAG_IS_SET(buf, GST_BUFFER_FLAG_ONLY_FORCED_TEXT)) == CLC_FAIL) {
+    if (ttmlParser.Parse(self->textbuf->str, timedText::SubtitlesFormat::TTML, self->forcedOnly) == CLC_FAIL) {
         GstEvent* event = gst_event_new_gap(GST_BUFFER_PTS(buf), GST_BUFFER_DURATION(buf));
         gst_pad_push_event(self->srcpad, event);
         return GST_FLOW_OK;

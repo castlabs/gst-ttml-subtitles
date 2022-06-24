@@ -1,7 +1,7 @@
 #include "SubtitleParser.h"
 using namespace SubtitleParser;
 
-clc_Result Parser::Parse(const clc::String& doc, timedText::SubtitlesFormat format, bool isDisplayOnlyForced)
+clc_Result Parser::Parse(const clc::String& doc, timedText::SubtitlesFormat format, bool forcedOnly)
 {
 	auto parser = timedText::SubtitlesParserFactory::createParser(format, this->pool);
 
@@ -11,6 +11,6 @@ clc_Result Parser::Parse(const clc::String& doc, timedText::SubtitlesFormat form
 
 	this->pool.setCurrentTrackIndex(defaultTrackId);
 	this->sceneHandler = std::make_unique<SubtitleParserUtils::SceneHandler>(pool);
-	this->sceneHandler->setDisplayOnlyForced(isDisplayOnlyForced);
+	this->sceneHandler->setForcedOnly(forcedOnly);
 	return this->sceneHandler->createScenes();
 }
