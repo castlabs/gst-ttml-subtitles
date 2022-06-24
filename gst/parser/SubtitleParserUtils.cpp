@@ -329,9 +329,9 @@ GstBuffer* Scene::fillAndGetBuffer()
 }
 
 
-/* ScenesHandler */
+/* SceneHandler */
 
-SubtitleConstList ScenesHandler::getCuesAtTimeUs(int64_t timeUs)
+SubtitleConstList SceneHandler::getCuesAtTimeUs(int64_t timeUs)
 {
 	SubtitleConstList cues;
 	auto currTrackId = this->pool.getCurrentTrackIndex();
@@ -348,7 +348,7 @@ SubtitleConstList ScenesHandler::getCuesAtTimeUs(int64_t timeUs)
 	return cues;
 }
 
-int64_t ScenesHandler::findNextTransition(int64_t timeUs)
+int64_t SceneHandler::findNextTransition(int64_t timeUs)
 {
 	int64_t nextTransitionUs = std::numeric_limits<int64_t>::max();
 	for(int cueIndex = 0; cueIndex < this->pool.getNumberOfCues(this->trackId); ++cueIndex)
@@ -364,7 +364,7 @@ int64_t ScenesHandler::findNextTransition(int64_t timeUs)
 	return nextTransitionUs;
 }
 
-clc_Result ScenesHandler::createScenes()
+clc_Result SceneHandler::createScenes()
 {
 	int64_t timeUs = -1;
 	while((timeUs = findNextTransition(timeUs)) != std::numeric_limits<int64_t>::max())
@@ -388,7 +388,7 @@ clc_Result ScenesHandler::createScenes()
 	return CLC_SUCCESS;
 }
 
-std::vector<GstBuffer*> ScenesHandler::getScenesBuffersList()
+std::vector<GstBuffer*> SceneHandler::getScenesBuffersList()
 {
 	std::vector<GstBuffer*> bufferList;
 	for(const auto& scene : this->scenes)

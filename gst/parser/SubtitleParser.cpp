@@ -10,7 +10,7 @@ clc_Result Parser::Parse(const clc::String& doc, timedText::SubtitlesFormat form
 		return CLC_FAIL;
 
 	this->pool.setCurrentTrackIndex(defaultTrackId);
-	this->scenesHandler = std::make_unique<SubtitleParserUtils::ScenesHandler>(pool);
-	this->scenesHandler->setDisplayOnlyForced(isDisplayOnlyForced);
-	return this->scenesHandler->createScenes();
+	this->sceneHandler = std::make_unique<SubtitleParserUtils::SceneHandler>(pool);
+	this->sceneHandler->setDisplayOnlyForced(isDisplayOnlyForced);
+	return this->sceneHandler->createScenes();
 }

@@ -50,11 +50,11 @@ namespace SubtitleParserUtils
 		guint currBrTextIndexInGstBuffer = -1;
 	};
 
-	class ScenesHandler
+	class SceneHandler
 	{
 	public:
-		ScenesHandler() = delete;
-		ScenesHandler(const timedText::SubtitlesPool& pool) : pool(pool), trackId(pool.getCurrentTrackIndex()) {}
+		SceneHandler() = delete;
+		SceneHandler(const timedText::SubtitlesPool& pool) : pool(pool), trackId(pool.getCurrentTrackIndex()) {}
 
 		void setDisplayOnlyForced(bool value) { isDisplayOnlyForced = value; }
 
