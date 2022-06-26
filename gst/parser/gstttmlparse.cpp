@@ -1616,7 +1616,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     //so we store needed buf data here
     GstClockTime buf_end_time = buf->pts + buf->duration;
     auto subtitles = ttmlParser.getSubtitles();
-    for (int subtitleIndex = 0; subtitleIndex < subtitles.size(); ++subtitleIndex) {
+    for (size_t subtitleIndex = 0; subtitleIndex < subtitles.size(); ++subtitleIndex) {
         if (self->segment.position > GST_BUFFER_PTS(subtitles[subtitleIndex]))
             continue;
         self->segment.position = GST_BUFFER_PTS(subtitles[subtitleIndex]);
