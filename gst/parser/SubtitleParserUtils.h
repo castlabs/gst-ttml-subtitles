@@ -50,15 +50,17 @@ namespace SubtitleParserUtils
 		guint currBrTextIndexInGstBuffer = -1;
 	};
 
-	class ScenesHandler
+	class SceneHandler
 	{
 	public:
-		ScenesHandler() = delete;
-		ScenesHandler(const timedText::SubtitlesPool& pool) : pool(pool), trackId(pool.getCurrentTrackIndex()) {}
+		SceneHandler() = delete;
+		SceneHandler(const timedText::SubtitlesPool& pool) : pool(pool), trackId(pool.getCurrentTrackIndex()) {}
+
+		void setForcedOnly(bool value) { forcedOnly = value; }
 
 		clc_Result createScenes();
 
-		std::vector<GstBuffer*> getScenesBuffersList();
+		std::vector<GstBuffer*> getSceneBuffers();
 
 	private:
 
@@ -71,5 +73,6 @@ namespace SubtitleParserUtils
 		const timedText::SubtitlesPool& pool;
 		std::vector<std::unique_ptr<Scene>> scenes;
 		const size_t trackId;
+		bool forcedOnly = false;
 	};
 }
