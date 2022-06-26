@@ -12,7 +12,7 @@ namespace SubtitleParser
 	public:		
 		clc_Result Parse(const clc::String& doc, timedText::SubtitlesFormat format, bool forcedOnly = false);
 
-		std::vector<GstBuffer*> getSubtitleList() { return sceneHandler->getScenesBuffersList(); }
+		std::vector<GstBuffer*> getSubtitles() { return sceneHandler->getSceneBuffers(); }
 
 	private:
 		timedText::SubtitlesPool pool;

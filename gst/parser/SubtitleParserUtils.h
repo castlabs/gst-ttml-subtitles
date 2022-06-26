@@ -60,7 +60,7 @@ namespace SubtitleParserUtils
 
 		clc_Result createScenes();
 
-		std::vector<GstBuffer*> getScenesBuffersList();
+		std::vector<GstBuffer*> getSceneBuffers();
 
 	private:
 

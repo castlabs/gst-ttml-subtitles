@@ -388,7 +388,7 @@ clc_Result SceneHandler::createScenes()
 	return CLC_SUCCESS;
 }
 
-std::vector<GstBuffer*> SceneHandler::getScenesBuffersList()
+std::vector<GstBuffer*> SceneHandler::getSceneBuffers()
 {
 	std::vector<GstBuffer*> bufferList;
 	for(const auto& scene : this->scenes)

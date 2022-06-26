@@ -74,10 +74,6 @@ enum
   PROP_FORCED_ONLY
 };
 
-typedef enum {
-    GST_BUFFER_FLAG_ONLY_FORCED_TEXT = GstBufferFlags::GST_BUFFER_FLAG_LAST << 1,
-} GstBufferFlagsCustom;
-
 static void
 gst_ttml_parse_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
@@ -198,7 +194,7 @@ gst_ttml_parse_class_init (GstTtmlParseClass * klass)
 
   g_object_class_install_property(object_class, PROP_FORCED_ONLY,
       g_param_spec_boolean("only-forced-subtitles", "show only forced subtitles",
-          "Skip all subtitles with no forced flag", FALSE,
+          "Do not display subtitles unless they are marked as forced.", FALSE,
           (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 }
 
@@ -372,9 +368,10 @@ gst_ttml_parse_set_property (GObject * object, guint prop_id,
     }
     case PROP_FORCED_ONLY:
     {
-        ttmlparse->forcedOnly = g_value_get_boolean(value);
-        GST_DEBUG_OBJECT(object, "video framerate set to %s\n", 
-            ttmlparse->forcedOnly ? "true" : "false");
+
+      ttmlparse->forced_only = g_value_get_boolean(value);
+      GST_DEBUG_OBJECT(object, "forced only subtitles set to %d\n", ttmlparse->forced_only);
+      break;
     }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1609,7 +1606,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
   if (g_strcmp0 (self->subtitle_codec, "EBUTT") == 0) {
     GList *subtitle;
     SubtitleParser::Parser ttmlParser;
-    if (ttmlParser.Parse(self->textbuf->str, timedText::SubtitlesFormat::TTML, self->forcedOnly) == CLC_FAIL) {
+    if (ttmlParser.Parse(self->textbuf->str, timedText::SubtitlesFormat::TTML, self->forced_only) == CLC_FAIL) {
         GstEvent* event = gst_event_new_gap(GST_BUFFER_PTS(buf), GST_BUFFER_DURATION(buf));
         gst_pad_push_event(self->srcpad, event);
         return GST_FLOW_OK;
@@ -1618,16 +1615,16 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     //? for some reason gst_buffer_new gives buf address for the new buffer in getSubtitleList()
     //so we store needed buf data here
     GstClockTime buf_end_time = buf->pts + buf->duration;
-    auto subtitleList = ttmlParser.getSubtitleList();
-    for (int subtitleIndex = 0; subtitleIndex < subtitleList.size(); ++subtitleIndex) {
-        if (self->segment.position > GST_BUFFER_PTS(subtitleList[subtitleIndex]))
+    auto subtitles = ttmlParser.getSubtitles();
+    for (int subtitleIndex = 0; subtitleIndex < subtitles.size(); ++subtitleIndex) {
+        if (self->segment.position > GST_BUFFER_PTS(subtitles[subtitleIndex]))
             continue;
-        self->segment.position = GST_BUFFER_PTS(subtitleList[subtitleIndex]);
-        ret = gst_pad_push(self->srcpad, subtitleList[subtitleIndex]);
-        if (ret == GST_FLOW_OK && subtitleIndex == subtitleList.size() - 1) {
+        self->segment.position = GST_BUFFER_PTS(subtitles[subtitleIndex]);
+        ret = gst_pad_push(self->srcpad, subtitles[subtitleIndex]);
+        if (ret == GST_FLOW_OK && subtitleIndex == subtitles.size() - 1) {
             //notify that renderer shouldn't expect more subtitle buffers
             //if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
-            GstClockTime last_subtitle_end_time = subtitleList[subtitleIndex]->pts + subtitleList[subtitleIndex]->duration;
+            GstClockTime last_subtitle_end_time = subtitles[subtitleIndex]->pts + subtitles[subtitleIndex]->duration;
             if (buf_end_time > last_subtitle_end_time) {
                 GstEvent* event = gst_event_new_gap(last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
                 gst_pad_push_event(self->srcpad, event);
