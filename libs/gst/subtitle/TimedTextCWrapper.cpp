@@ -9,6 +9,11 @@ extern "C"
 		return reinterpret_cast<CLengthExpression*>(len_expr);
 	}
 
+	CLengthExpression* create_length_expression_from_value(double value) {
+		auto* len_expr = new timedText::LengthExpression(value, timedText::LengthUnit::percentage, timedText::Orientation::Horizontal);
+		return reinterpret_cast<CLengthExpression*>(len_expr);
+	}
+
 	void free_length_expression(CLengthExpression* len_expr) {
 		timedText::LengthExpression* original_len_expr = reinterpret_cast<timedText::LengthExpression*>(len_expr);
 		delete original_len_expr;
@@ -16,6 +21,43 @@ extern "C"
 
 	uint32_t to_pixel(CLengthExpression* len_expr, uint32_t width, uint32_t height) {
 		timedText::LengthExpression* original_len_expr = reinterpret_cast<timedText::LengthExpression*>(len_expr);
-		return original_len_expr->toPixel(timedText::Point<uint32_t>{width, height });
+		return original_len_expr->toPixel(timedText::Point<uint32_t>{ width, height });
 	}
+
+	bool is_default_c_length_expression(CLengthExpression* c_len_expr) {
+		auto* default_len_expr = reinterpret_cast<timedText::LengthExpression*>(create_length_expression_from_value(0.0));
+		auto* len_expr = reinterpret_cast<timedText::LengthExpression*>(c_len_expr);
+		return (&default_len_expr == &len_expr);
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////
+	void create_text_outline_default(CTextOutline* text_outline) {		
+		text_outline->thickness = create_length_expression_from_value(0.0),
+		text_outline->blurRadius = create_length_expression_from_value(0.0);
+		text_outline->colorARGB = 0;
+	}
+
+	bool is_text_outline_default(CTextOutline c_text_outline) {
+		return is_default_c_length_expression(c_text_outline.blurRadius) &&
+			is_default_c_length_expression(c_text_outline.thickness) &&
+			c_text_outline.colorARGB == 0;
+	}
+
+	bool is_text_outline_equal(CTextOutline lhs, CTextOutline rhs) {
+		auto* lhs_blur_radius = reinterpret_cast<timedText::LengthExpression*>(lhs.blurRadius);
+		auto* rhs_blur_radius = reinterpret_cast<timedText::LengthExpression*>(rhs.blurRadius);
+
+		auto* lhs_thickness = reinterpret_cast<timedText::LengthExpression*>(lhs.thickness);
+		auto* rhs_thickness = reinterpret_cast<timedText::LengthExpression*>(rhs.thickness);
+
+		return lhs_blur_radius == rhs_blur_radius &&
+			lhs_thickness == lhs_thickness &&
+			lhs.colorARGB == rhs.colorARGB;
+	}
+
+	void free_text_outline(CTextOutline c_text_outline) {
+		free_length_expression(c_text_outline.blurRadius);
+		free_length_expression(c_text_outline.thickness);
+	}
+
 }
