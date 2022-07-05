@@ -60,7 +60,7 @@
 //#include "mpl2parse.h"
 //#include "qttextparse.h"
 //#include "ttmlparse.h"
-#include "SubtitleParser.h"
+#include "SubtitleParserWrapper.h"
 
 GST_DEBUG_CATEGORY (ttml_parse_debug);
 
@@ -226,6 +226,7 @@ gst_ttml_parse_init (GstTtmlParse * ttmlparse)
 
   ttmlparse->fps_n = 24000;
   ttmlparse->fps_d = 1001;
+  ttmlparse->forced_only = FALSE;
 }
 
 /*
@@ -1604,27 +1605,29 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
   }
 
   if (g_strcmp0 (self->subtitle_codec, "EBUTT") == 0) {
-    GList *subtitle;
-    SubtitleParser::Parser ttmlParser;
-    if (ttmlParser.Parse(self->textbuf->str, timedText::SubtitlesFormat::TTML, self->forced_only) == CLC_FAIL) {
-        GstEvent* event = gst_event_new_gap(GST_BUFFER_PTS(buf), GST_BUFFER_DURATION(buf));
-        gst_pad_push_event(self->srcpad, event);
-        return GST_FLOW_OK;
+    GList* subtitle;
+    CParser* ttml_parser = parse_ttml(self->textbuf->str, self->forced_only);
+    if (ttml_parser == NULL) {
+      GstEvent* event = gst_event_new_gap(GST_BUFFER_PTS(buf), GST_BUFFER_DURATION(buf));
+      gst_pad_push_event(self->srcpad, event);
+      return GST_FLOW_OK;
     }
 
     //? for some reason gst_buffer_new gives buf address for the new buffer in getSubtitleList()
     //so we store needed buf data here
     GstClockTime buf_end_time = buf->pts + buf->duration;
-    auto subtitles = ttmlParser.getSubtitles();
-    for (size_t subtitleIndex = 0; subtitleIndex < subtitles.size(); ++subtitleIndex) {
-        if (self->segment.position > GST_BUFFER_PTS(subtitles[subtitleIndex]))
+    GList* subtitle_list = get_subtitles(ttml_parser);
+    //for (size_t subtitleIndex = 0; subtitleIndex < subtitles.size(); ++subtitleIndex) {
+    for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
+        GstBuffer* op_buffer = subtitle->data;
+        if (self->segment.position > GST_BUFFER_PTS(op_buffer))
             continue;
-        self->segment.position = GST_BUFFER_PTS(subtitles[subtitleIndex]);
-        ret = gst_pad_push(self->srcpad, subtitles[subtitleIndex]);
-        if (ret == GST_FLOW_OK && subtitleIndex == subtitles.size() - 1) {
+        self->segment.position = GST_BUFFER_PTS(op_buffer);
+        ret = gst_pad_push(self->srcpad, op_buffer);
+        if (ret == GST_FLOW_OK && subtitle->next == NULL) {
             //notify that renderer shouldn't expect more subtitle buffers
             //if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
-            GstClockTime last_subtitle_end_time = subtitles[subtitleIndex]->pts + subtitles[subtitleIndex]->duration;
+            GstClockTime last_subtitle_end_time = op_buffer->pts + op_buffer->duration;
             if (buf_end_time > last_subtitle_end_time) {
                 GstEvent* event = gst_event_new_gap(last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
                 gst_pad_push_event(self->srcpad, event);

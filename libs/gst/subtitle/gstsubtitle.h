@@ -24,7 +24,8 @@
 #include <glib.h>
 #include <gst/gst.h>
 #include <gst/gstminiobject.h>
-#include <SubtitlesParserFactory.h>
+
+#include "TimedTextCWrapper.h"
 
 G_BEGIN_DECLS
 
@@ -371,27 +372,26 @@ typedef enum {
 struct _GstSubtitleStyleSet {
   GstSubtitleTextDirection text_direction;
   gchar *font_family;
-  timedText::FontSizeLen font_size;  
-  timedText::LengthExpression line_height;
+  CFontSize* font_size;
+  CLengthExpression* line_height;
   GstSubtitleTextAlign text_align;
   GstSubtitleColor color;
   GstSubtitleColor background_color;
   GstSubtitleFontStyle font_style;
-  GstSubtitleFontWeight font_weight;  
-  timedText::TextDecoration text_decoration;
+  GstSubtitleFontWeight font_weight; 
+  CTextDecoration text_decoration;
   GstSubtitleUnicodeBidi unicode_bidi;
   GstSubtitleWrapping wrap_option;
   GstSubtitleMultiRowAlign multi_row_align;
   gdouble line_padding;
-  timedText::PointLen origin;  
-  timedText::PointLen extent;  
-  GstSubtitleDisplayAlign display_align;  
-  timedText::PaddingLen padding;
+  CPointLen origin, extent;
+  GstSubtitleDisplayAlign display_align;
+  CPaddingLen padding;
   GstSubtitleWritingMode writing_mode;
   GstSubtitleBackgroundMode show_background;
   GstSubtitleOverflowMode overflow;
   gdouble opacity;
-  timedText::TextOutline text_outline;
+  CTextOutline text_outline;
 };
 
 GstSubtitleStyleSet * gst_subtitle_style_set_new ();

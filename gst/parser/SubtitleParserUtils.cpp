@@ -1,4 +1,5 @@
 #include "SubtitleParserUtils.h"
+#include "gst/subtitle/TimedTextCWrapper.h"
 
 using namespace SubtitleParserUtils;
 
@@ -31,14 +32,21 @@ namespace {
 				return color2;
 		}
 
+		void setCLengthExpression(CLengthExpression** expression, timedText::LengthExpression tt_expression) 
+		{
+			*expression = create_length_expression(tt_expression.value, static_cast<CLengthUnit>(tt_expression.unit), static_cast<COrientation>(tt_expression.orientation));			
+		};
+
 		void updateRegionStyleSet(GstSubtitleStyleSet* style_set, const timedText::RegionStyle& tt_style_set)
 		{
 			if(tt_style_set.backgroundColorARGB != 0)
 				style_set->background_color = StyleUtils::ARGBColorToGstSubtileColor(tt_style_set.backgroundColorARGB);
-			
-			style_set->origin = tt_style_set.origin;
 
-			style_set->extent = tt_style_set.extent;
+			setCLengthExpression(&style_set->origin.x, tt_style_set.origin.x);			
+			setCLengthExpression(&style_set->origin.y, tt_style_set.origin.y);
+			
+			setCLengthExpression(&style_set->extent.x, tt_style_set.extent.x);
+			setCLengthExpression(&style_set->extent.y, tt_style_set.extent.y);
 
 			if(tt_style_set.displayAlign == timedText::DisplayAlign::center)
 				style_set->display_align = GST_SUBTITLE_DISPLAY_ALIGN_CENTER;
@@ -47,7 +55,10 @@ namespace {
 			else
 				style_set->display_align = GST_SUBTITLE_DISPLAY_ALIGN_BEFORE;
 
-			style_set->padding = tt_style_set.padding;
+			setCLengthExpression(&style_set->padding.bottom, tt_style_set.padding.bottom);
+			setCLengthExpression(&style_set->padding.left, tt_style_set.padding.left);
+			setCLengthExpression(&style_set->padding.right, tt_style_set.padding.right);
+			setCLengthExpression(&style_set->padding.top, tt_style_set.padding.top);
 
 			if(tt_style_set.writingMode == timedText::WritingMode::rl)
 				style_set->writing_mode = GST_SUBTITLE_WRITING_MODE_RLTB;
@@ -99,7 +110,7 @@ namespace {
 				style_set->line_padding *= (1.0 / cellColumns);
 			}
 
-			style_set->line_height = tt_style_set.lineHeight;
+			setCLengthExpression(&style_set->line_height, tt_style_set.lineHeight);
 
 			if(tt_style_set.textAlign == timedText::TextAlign::left)
 				style_set->text_align = GST_SUBTITLE_TEXT_ALIGN_LEFT;
@@ -135,7 +146,7 @@ namespace {
 			if(tt_style_set.backgroundColorARGB != 0)
 				style_set->background_color = StyleUtils::ARGBColorToGstSubtileColor(tt_style_set.backgroundColorARGB);
 
-			style_set->font_size = tt_style_set.fontSize;
+			setCLengthExpression(&style_set->font_size, tt_style_set.fontSize.horizontal);
 
 			if(tt_style_set.fontStyle == timedText::FontStyle::italic)
 				style_set->font_style = GST_SUBTITLE_FONT_STYLE_ITALIC;
@@ -149,7 +160,9 @@ namespace {
 			else
 				style_set->font_weight = GST_SUBTITLE_FONT_WEIGHT_NORMAL;
 
-			style_set->text_decoration = tt_style_set.textDecoration;
+			style_set->text_decoration.isLineThrough = tt_style_set.textDecoration.isLineThrough;
+			style_set->text_decoration.isOverline = tt_style_set.textDecoration.isOverline;
+			style_set->text_decoration.isUnderline = tt_style_set.textDecoration.isUnderline;
 
 			if(tt_style_set.isWordWrapped)
 				style_set->wrap_option = GST_SUBTITLE_WRAPPING_ON;
@@ -159,7 +172,9 @@ namespace {
 			if(tt_style_set.colorARGB != 0xffffffff)
 				style_set->color = StyleUtils::ARGBColorToGstSubtileColor(tt_style_set.colorARGB);
 
-			style_set->text_outline = tt_style_set.textOutline;
+			setCLengthExpression(&style_set->text_outline.blurRadius, tt_style_set.textOutline.blurRadius);
+			setCLengthExpression(&style_set->text_outline.thickness, tt_style_set.textOutline.thickness);
+			style_set->text_outline.colorARGB = tt_style_set.textOutline.colorARGB;
 		}
 	}
 }

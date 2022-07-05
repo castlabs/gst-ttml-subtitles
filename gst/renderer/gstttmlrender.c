@@ -1173,24 +1173,12 @@ _text_range_free (TextRange * range)
   g_slice_free (TextRange, range);
 }
 
-bool textOutlineIsEquel(const timedText::TextOutline& left, const timedText::TextOutline& right)
-{
-    return left.blurRadius == right.blurRadius &&
-        left.colorARGB == right.colorARGB &&
-        left.thickness == right.thickness;
-}
-
-bool textOutlineIsDefault(const timedText::TextOutline& value)
-{
-    return textOutlineIsEquel(value, timedText::TextOutline());
-}
-
 /* From the elements within @block, generate a string of the subtitle text
  * marked-up using pango-markup. Also, store the ranges of characters belonging
  * to the text of each element in @text_ranges. */
 static gchar *
 gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
-    const GstSubtitleBlock * block, gdouble opacity, timedText::TextOutline& block_text_outline, GstBuffer * text_buf,
+    const GstSubtitleBlock * block, gdouble opacity, CTextOutline* block_text_outline, GstBuffer* text_buf,
     GPtrArray ** text_ranges)
 {
   const GstSubtitleElement *element;
@@ -1212,6 +1200,7 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
       (GDestroyNotify) _text_range_free);
   
   bool no_text_outline = false;
+  guint text_outline_index = -1;  
   for (i = 0; i < gst_subtitle_block_get_element_count (block); ++i) {
     TextRange *range = g_slice_new0 (TextRange);
     element = gst_subtitle_block_get_element (block, i);
@@ -1234,32 +1223,26 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
     range->first_char = total_text_length;
 
     //set only if each element(a.k.a <span>) has the same non-default value of text outline
-    if(textOutlineIsDefault(element->style_set->text_outline))
-    {
-        block_text_outline = timedText::TextOutline();
-        no_text_outline = true;        
+    if (is_text_outline_default (element->style_set->text_outline)) {
+      no_text_outline = true;
     }
 
-    if(!no_text_outline)
-    {
-        if(textOutlineIsDefault(block_text_outline))
-            block_text_outline = element->style_set->text_outline;
-        else if(!textOutlineIsEquel(block_text_outline, element->style_set->text_outline))
-        {
-            block_text_outline = timedText::TextOutline();
-            no_text_outline = true;
-        }
+    if (!no_text_outline) {
+      if (text_outline_index == -1) {
+        text_outline_index = i;
+      } else if (!is_text_outline_equal (gst_subtitle_block_get_element (block, text_outline_index)->style_set->text_outline,
+                     element->style_set->text_outline)) {
+        no_text_outline = true;
+      }
     }
 
     //composition with region opacity
     element->style_set->color.a *= opacity;
     fgcolor = gst_ttml_render_color_to_string (element->style_set->color);
-   
-    timedText::PointPx screenSize(render->width, render->height);
 
     //ignore font width
     font_size = g_strdup_printf ("%u",        
-        (gulong)(element->style_set->font_size.vertical.toPixel(screenSize)));
+        (gulong)to_pixel(element->style_set->font_size, render->width, render->height));
     font_family =
       (g_strcmp0 (element->style_set->font_family, "default") == 0) ?
       "Monospace" : element->style_set->font_family;
@@ -1310,6 +1293,14 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
     g_free (font_size);
     gst_memory_unmap (mem, &map);
     gst_memory_unref (mem);
+  }
+
+  if (!no_text_outline && text_outline_index != -1) {
+      //allocated upstream
+      free_text_outline(*block_text_outline);
+      block_text_outline->blurRadius = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.blurRadius;
+      block_text_outline->thickness = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.thickness;
+      block_text_outline->colorARGB = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.colorARGB;
   }
 
   return joined_text;
@@ -1429,7 +1420,7 @@ void blur_image_surface(cairo_surface_t* surface, int radius)
 static GstTtmlRenderRenderedText *
 gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
     guint max_width, PangoAlignment alignment, guint line_height,
-    guint max_font_size, gboolean wrap, timedText::TextOutline text_outline)
+    guint max_font_size, gboolean wrap, CTextOutline* text_outline)
 {
   GstTtmlRenderClass * renderClass;
   GstTtmlRenderRenderedText *ret;
@@ -1493,22 +1484,21 @@ gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
   cairo_paint (cairo_state);
   cairo_set_operator (cairo_state, CAIRO_OPERATOR_OVER);
 
-  /* Render layout. */    
-  if (!textOutlineIsDefault(text_outline)) {
+  ///* Render layout. */    
+  if (!is_text_outline_default (*text_outline)) {
     pango_cairo_layout_path(cairo_state, ret->layout);
 
-    guint8 a = text_outline.colorARGB >> 24;
-    guint8 r = (text_outline.colorARGB >> 16) & 0xFF;
-    guint8 g = (text_outline.colorARGB >> 8) & 0xFF;
-    guint8 b = text_outline.colorARGB & 0xFF;
+    guint8 a = text_outline->colorARGB >> 24;
+    guint8 r = (text_outline->colorARGB >> 16) & 0xFF;
+    guint8 g = (text_outline->colorARGB >> 8) & 0xFF;
+    guint8 b = text_outline->colorARGB & 0xFF;
 
-    timedText::PointPx screenSize(render->width, render->height);
     cairo_set_source_rgba(cairo_state, r, g, b, a);
-    cairo_set_line_width(cairo_state, text_outline.thickness.toPixel(screenSize));
+    cairo_set_line_width(cairo_state,  to_pixel(text_outline->thickness, render->width, render->height));
     cairo_stroke(cairo_state);
     pango_cairo_update_layout(cairo_state, ret->layout);
 
-    blur_image_surface(surface, text_outline.blurRadius.toPixel(screenSize));
+    blur_image_surface(surface, to_pixel(text_outline->blurRadius, render->width, render->height));
     cairo_fill(cairo_state);
   }
 
@@ -1583,9 +1573,7 @@ gst_ttml_render_get_max_font_size (GPtrArray * elements, GstTtmlRender* render)
 
   for (i = 0; i < elements->len; ++i) {
     element = (GstSubtitleElement*)g_ptr_array_index (elements, i);
-    timedText::PointPx screenSize(render->width, render->height);
-    //ignored font width
-    gulong curr_font_size = (gulong)(element->style_set->font_size.vertical.toPixel(screenSize));
+    gulong curr_font_size = to_pixel(element->style_set->font_size, render->width, render->height);
     if(curr_font_size > max_size)
         max_size = curr_font_size;
   }
@@ -1887,9 +1875,8 @@ gst_ttml_render_render_element_backgrounds(GstTtmlRender * render, const GstSubt
 
       rect_width = (area_end - area_start);
 
-      timedText::PointPx screenSize(render->width, render->height);
       //ignore font width
-      gint font_size = element->style_set->font_size.vertical.toPixel(screenSize);
+      gint font_size = to_pixel(element->style_set->font_size, render->width, render->height);
 
       if (rect_width > 0) {     /* <br>s will result in zero-width rectangle */
         GstTtmlRenderRenderedImage *image, *tmp;
@@ -2011,23 +1998,21 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
   GstTtmlRenderRenderedImage *ret;
 
   /* Join text from elements to form a single marked-up string. */
-  timedText::TextOutline block_text_outline;
-  marked_up_string = gst_ttml_render_generate_marked_up_string (render, block, opacity, block_text_outline,
+  CTextOutline block_text_outline;
+  create_text_outline_default(&block_text_outline);
+  marked_up_string = gst_ttml_render_generate_marked_up_string (render, block, opacity, &block_text_outline,
       text_buf, &char_ranges);
 
   max_font_size = (guint) (gst_ttml_render_get_max_font_size (block->elements, render));
   GST_CAT_DEBUG (ttmlrender, "Max font size: %u", max_font_size);
-  //line_height = (guint) round(block->style_set->line_height * max_font_size);
-  //ignored font width
-  timedText::PointPx maxFontSizePoint(max_font_size, max_font_size);
-  line_height = (guint)round(block->style_set->line_height.toPixel(maxFontSizePoint));
+  line_height = (guint)to_pixel(block->style_set->line_height, max_font_size, max_font_size);
   line_padding = (guint) (block->style_set->line_padding * render->width);
   alignment = gst_ttml_render_get_alignment (block->style_set);
 
   /* Render text to buffer. */
   rendered_text = gst_ttml_render_draw_text (render, marked_up_string,
       (width - (2 * line_padding)), alignment, line_height, max_font_size,
-      gst_ttml_render_elements_are_wrapped (block->elements), block_text_outline);
+      gst_ttml_render_elements_are_wrapped (block->elements), &block_text_outline);
 
   switch (block->style_set->text_align) {
     case GST_SUBTITLE_TEXT_ALIGN_START:
@@ -2084,6 +2069,9 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
 
   g_free (marked_up_string);
   g_ptr_array_unref (char_ranges);
+  if (is_text_outline_default(block_text_outline)) {
+      free_text_outline(block_text_outline);
+  }
   GST_CAT_DEBUG (ttmlrender, "block width: %u   block height: %u",
       ret->width, ret->height);
   return ret;
@@ -2122,12 +2110,11 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
   GstVideoOverlayComposition *ret = NULL;
   guint i;
 
-  timedText::PointPx screenSize(render->width, render->height);
-  region_x = (guint)(region->style_set->origin.x.toPixel(screenSize));
-  region_y = (guint)(region->style_set->origin.y.toPixel(screenSize));
+  region_x = (guint)to_pixel(region->style_set->origin.x, render->width, render->height);
+  region_y = (guint)to_pixel(region->style_set->origin.y, render->width, render->height);
 
-  region_width = (guint)(region->style_set->extent.x.toPixel(screenSize));
-  region_height = (guint)(region->style_set->extent.y.toPixel(screenSize));
+  region_width = (guint)to_pixel(region->style_set->extent.x, render->width, render->height);
+  region_height = (guint)to_pixel(region->style_set->extent.y, render->width, render->height);
 
   if(region_x + region_width > render->width)
       region_width = render->width - region_x;
@@ -2135,23 +2122,14 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
   if(region_y + region_height > render->height)
       region_height = render->height - region_y;
 
-  //region_width = (guint)(round(region->style_set->extent_w * render->width));
-  //region_height =
-  //    (guint)(round(region->style_set->extent_h * render->height));
-  //region_x = (guint) (round (region->style_set->origin_x * render->width));
-  //region_y = (guint) (round (region->style_set->origin_y * render->height));
-
-  timedText::PointPx regionSize(region_width, region_height);
-  //padding_start =
-  //  (guint) (round (region->style_set->padding_start * render->width));
   padding_start =
-      (guint)(region->style_set->padding.left.toPixel(regionSize));
+      (guint)to_pixel(region->style_set->padding.left, region_width, region_height);
   padding_end =
-      (guint)(region->style_set->padding.right.toPixel(regionSize));
+      (guint)to_pixel(region->style_set->padding.right, region_width, region_height);
   padding_before =
-      (guint)(region->style_set->padding.top.toPixel(regionSize));
+      (guint)to_pixel(region->style_set->padding.top, region_width, region_height);
   padding_after =
-      (guint)(region->style_set->padding.bottom.toPixel(regionSize));
+      (guint)to_pixel(region->style_set->padding.bottom, region_width, region_height);
 
   /* "window" here refers to the section of the region that we're allowed to
    * render into, i.e., the region minus padding. */

@@ -9,8 +9,8 @@
 typedef struct CLengthExpression CLengthExpression;
 typedef struct CLengthExpression CFontSize; //horizontal font size
 typedef struct TextDecoration CTextDecoration;
-typedef struct TextOutline CTextOutline;
 typedef struct PointLen CPointLen;
+typedef struct _TextOutline CTextOutline;
 typedef struct RectLen CPaddingLen;
 
 #ifdef __cplusplus
@@ -52,7 +52,7 @@ struct RectLen {
 	CLengthExpression* bottom;
 };
 
-struct TextOutline {
+struct _TextOutline {
 	CLengthExpression* thickness;
 	CLengthExpression* blurRadius;
 	uint32_t colorARGB;
