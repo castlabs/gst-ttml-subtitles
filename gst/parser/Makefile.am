@@ -6,7 +6,7 @@ libgstttmlparse_la_SOURCES = \
 	SubtitleParser.h \
 	SubtitleParserUtils.cpp \
 	SubtitleParserUtils.h \
-	gstttmlparse.cpp \
+	gstttmlparse.c \
 	gstttmlparse.h
 
 
@@ -24,6 +24,6 @@ libgstttmlparse_la_LIBTOOLFLAGS = $(GST_PLUGIN_LIBTOOLFLAGS)
 
 # headers we need but don't want installed
 noinst_HEADERS = \
-	SubtitleParser.h \
 	SubtitleParserUtils.h \
+	SubtitleParser.h \
 
