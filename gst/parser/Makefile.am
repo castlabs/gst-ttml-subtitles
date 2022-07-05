@@ -2,12 +2,22 @@ plugin_LTLIBRARIES = libgstttmlparse.la
 
 # sources used to compile this plug-in
 libgstttmlparse_la_SOURCES = \
-        SubtitleParser.cpp \
+	SubtitleParser.cpp \
 	SubtitleParser.h \
 	SubtitleParserUtils.cpp \
 	SubtitleParserUtils.h \
 	gstttmlparse.c \
-	gstttmlparse.h
+	gstttmlparse.h \
+	samiparse.c \
+	samiparse.h \
+	tmplayerparse.c \
+	tmplayerparse.h \
+	mpl2parse.c \
+	mpl2parse.h \
+	qttextparse.c \
+	qttextparse.h \
+	ttmlparse.c \
+	ttmlparse.h
 
 
 # compiler and linker flags used to compile this plugin, set in configure.ac
@@ -26,4 +36,10 @@ libgstttmlparse_la_LIBTOOLFLAGS = $(GST_PLUGIN_LIBTOOLFLAGS)
 noinst_HEADERS = \
 	SubtitleParserUtils.h \
 	SubtitleParser.h \
+	gstttmlparse.h \
+	samiparse.h \
+	tmplayerparse.h \
+	mpl2parse.h \
+	qttextparse.h \
+	ttmlparse.h
 
