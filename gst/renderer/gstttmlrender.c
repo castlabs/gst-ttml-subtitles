@@ -169,7 +169,7 @@ gst_ttml_render_get_type (void)
 
     g_once_init_leave ((gsize *) & type,
         g_type_register_static (GST_TYPE_ELEMENT, "GstTtmlRender", &info,
-            (GTypeFlags)0));
+            0));
   }
 
   return type;
@@ -202,7 +202,7 @@ gst_ttml_render_class_init (GstTtmlRenderClass * klass)
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
 
-  parent_class = (GstElementClass*)g_type_class_peek_parent (klass);
+  parent_class = g_type_class_peek_parent (klass);
 
   gobject_class->finalize = gst_ttml_render_finalize;
 
@@ -252,12 +252,12 @@ static void
 gst_ttml_render_init (GstTtmlRender * render,
     GstTtmlRenderClass * klass)
 {
-  GstPadTemplate *gstTemplate;
+  GstPadTemplate *template;
 
   /* video sink */
-  gstTemplate = gst_static_pad_template_get (&video_sink_template_factory);
-  render->video_sinkpad = gst_pad_new_from_template (gstTemplate, "video_sink");
-  gst_object_unref (gstTemplate);
+  template = gst_static_pad_template_get (&video_sink_template_factory);
+  render->video_sinkpad = gst_pad_new_from_template (template, "video_sink");
+  gst_object_unref (template);
   gst_pad_set_event_function (render->video_sinkpad,
       GST_DEBUG_FUNCPTR (gst_ttml_render_video_event));
   gst_pad_set_chain_function (render->video_sinkpad,
@@ -267,12 +267,12 @@ gst_ttml_render_init (GstTtmlRender * render,
   GST_PAD_SET_PROXY_ALLOCATION (render->video_sinkpad);
   gst_element_add_pad (GST_ELEMENT (render), render->video_sinkpad);
 
-  gstTemplate =
+  template =
       gst_element_class_get_pad_template (GST_ELEMENT_CLASS (klass),
       "text_sink");
-  if (gstTemplate) {
+  if (template) {
     /* text sink */
-    render->text_sinkpad = gst_pad_new_from_template (gstTemplate, "text_sink");
+    render->text_sinkpad = gst_pad_new_from_template (template, "text_sink");
 
     gst_pad_set_event_function (render->text_sinkpad,
         GST_DEBUG_FUNCPTR (gst_ttml_render_text_event));
@@ -286,9 +286,9 @@ gst_ttml_render_init (GstTtmlRender * render,
   }
 
   /* (video) source */
-  gstTemplate = gst_static_pad_template_get (&src_template_factory);
-  render->srcpad = gst_pad_new_from_template (gstTemplate, "src");
-  gst_object_unref (gstTemplate);
+  template = gst_static_pad_template_get (&src_template_factory);
+  render->srcpad = gst_pad_new_from_template (template, "src");
+  gst_object_unref (template);
   gst_pad_set_event_function (render->srcpad,
       GST_DEBUG_FUNCPTR (gst_ttml_render_src_event));
   gst_pad_set_query_function (render->srcpad,
@@ -753,7 +753,7 @@ gst_ttml_render_push_frame (GstTtmlRender * render,
     goto invalid_frame;
 
   while (compositions) {
-    GstVideoOverlayComposition *composition = (GstVideoOverlayComposition*)compositions->data;
+    GstVideoOverlayComposition *composition = compositions->data;
     gst_video_overlay_composition_blend (composition, &frame);
     compositions = compositions->next;
   }
@@ -1418,11 +1418,11 @@ void blur_image_surface(cairo_surface_t* surface, int radius)
 
 /* Render the text in a pango-markup string. */
 static GstTtmlRenderRenderedText *
-gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
+gst_ttml_render_draw_text (GstTtmlRender * render, const gchar * text,
     guint max_width, PangoAlignment alignment, guint line_height,
     guint max_font_size, gboolean wrap, CTextOutline* text_outline)
 {
-  GstTtmlRenderClass * renderClass;
+  GstTtmlRenderClass *class;
   GstTtmlRenderRenderedText *ret;
   cairo_surface_t *surface, *cropped_surface;
   cairo_t *cairo_state, *cropped_state;
@@ -1438,8 +1438,8 @@ gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
   ret = g_slice_new0 (GstTtmlRenderRenderedText);
   ret->text_image = gst_ttml_render_rendered_image_new_empty ();
 
-  renderClass = GST_TTML_RENDER_GET_CLASS (render);
-  ret->layout = pango_layout_new (renderClass->pango_context);
+  class = GST_TTML_RENDER_GET_CLASS (render);
+  ret->layout = pango_layout_new (class->pango_context);
 
   pango_layout_set_markup (ret->layout, text, strlen (text));
   GST_CAT_DEBUG (ttmlrender, "Layout text: %s",
@@ -1453,6 +1453,7 @@ gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
 
   pango_layout_set_alignment (ret->layout, alignment);
   pango_layout_get_pixel_extents (ret->layout, NULL, &logical_rect);
+
   for (i = 0; i < pango_layout_get_line_count (ret->layout); ++i) {
     PangoLayoutLine *line = pango_layout_get_line_readonly (ret->layout, i);
     PangoRectangle r, ink;
@@ -1484,7 +1485,7 @@ gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
   cairo_paint (cairo_state);
   cairo_set_operator (cairo_state, CAIRO_OPERATOR_OVER);
 
-  ///* Render layout. */    
+  /* Render layout. */
   if (!is_text_outline_default (*text_outline)) {
     pango_cairo_layout_path(cairo_state, ret->layout);
 
@@ -1519,7 +1520,7 @@ gst_ttml_render_draw_text(GstTtmlRender* render, const gchar* text,
   ret->text_image->image =
     gst_buffer_new_allocate (NULL, 4 * buf_width * buf_height, NULL);
   gst_buffer_memset (ret->text_image->image, 0, 0U, 4 * buf_width * buf_height);
-  gst_buffer_map (ret->text_image->image, &map, GST_MAP_READWRITE);    gst_buffer_map (ret->text_image->image, &map, GST_MAP_READWRITE);
+  gst_buffer_map (ret->text_image->image, &map, GST_MAP_READWRITE);
 
   stride = cairo_format_stride_for_width (CAIRO_FORMAT_ARGB32, buf_width);
   cropped_surface =
@@ -1554,7 +1555,7 @@ gst_ttml_render_elements_are_wrapped (GPtrArray * elements)
   guint i;
 
   for (i = 0; i < elements->len; ++i) {
-    element = (GstSubtitleElement*)g_ptr_array_index (elements, i);
+    element = g_ptr_array_index (elements, i);
     if (element->style_set->wrap_option == GST_SUBTITLE_WRAPPING_ON)
       return TRUE;
   }
@@ -1798,7 +1799,7 @@ gst_ttml_render_render_element_backgrounds(GstTtmlRender * render, const GstSubt
   GstTtmlRenderRenderedImage *ret = NULL;
 
   for (i = 0; i < char_ranges->len; ++i) {
-    range = (TextRange*)g_ptr_array_index (char_ranges, i);
+    range = g_ptr_array_index (char_ranges, i);
     element = gst_subtitle_block_get_element (block, i);
 
     GST_CAT_LOG (ttmlrender, "First char index: %u   Last char index: %u",
@@ -2371,7 +2372,7 @@ wait_for_text_buf:
 
           for (i = 0; i < subtitle_meta->regions->len; ++i) {
             GstVideoOverlayComposition *composition;
-            region = (GstSubtitleRegion*)g_ptr_array_index (subtitle_meta->regions, i);
+            region = g_ptr_array_index (subtitle_meta->regions, i);
             g_assert (region != NULL);
             composition = gst_ttml_render_render_text_region (render, region,
                 render->text_buffer);

@@ -74,6 +74,7 @@ enum
   PROP_FORCED_ONLY
 };
 
+
 static void
 gst_ttml_parse_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
@@ -182,7 +183,7 @@ gst_ttml_parse_class_init (GstTtmlParseClass * klass)
           "Unicode encoding. If not set, the GST_SUBTITLE_ENCODING environment "
           "variable will be checked for an encoding to use. If that is not set "
           "either, ISO-8859-15 will be assumed.", DEFAULT_ENCODING,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_VIDEOFPS,
       gst_param_spec_fraction ("video-fps", "Video framerate",
@@ -190,12 +191,12 @@ gst_ttml_parse_class_init (GstTtmlParseClass * klass)
           "formats to synchronize subtitles and video properly. If not set "
           "and the subtitle format requires it subtitles may be out of sync.",
           0, 1, G_MAXINT, 1, 24000, 1001,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property(object_class, PROP_FORCED_ONLY,
       g_param_spec_boolean("only-forced-subtitles", "show only forced subtitles",
           "Do not display subtitles unless they are marked as forced.", FALSE,
-          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -920,7 +921,7 @@ parse_subrip (ParserState * state, const gchar * line)
       gchar *end_time;
 
       /* looking for start_time --> end_time */
-      if ((end_time = g_strdup (strstr (line, " --> "))) &&
+      if ((end_time = strstr (line, " --> ")) &&
           parse_subrip_time (line, &ts_start) &&
           parse_subrip_time (end_time + strlen (" --> "), &ts_end) &&
           state->start_time <= ts_end) {
@@ -1263,7 +1264,7 @@ gst_ttml_parse_data_format_autodetect_regex_once (GstTtmlParseRegex regtype)
     case GST_TTML_PARSE_REGEX_MDVDSUB:
       result =
           (gpointer) g_regex_new ("^\\{[0-9]+\\}\\{[0-9]+\\}",
-          (GRegexCompileFlags) (G_REGEX_OPTIMIZE), (GRegexMatchFlags) (0), &gerr);
+          G_REGEX_RAW | G_REGEX_OPTIMIZE, 0, &gerr);
       if (result == NULL) {
         g_warning ("Compilation of mdvd regex failed: %s", gerr->message);
         g_error_free (gerr);
@@ -1274,7 +1275,7 @@ gst_ttml_parse_data_format_autodetect_regex_once (GstTtmlParseRegex regtype)
           g_regex_new ("^[\\s\\n]*[\\n]? {0,3}[ 0-9]{1,4}\\s*(\x0d)?\x0a"
           " ?[0-9]{1,2}: ?[0-9]{1,2}: ?[0-9]{1,2}[,.] {0,2}[0-9]{1,3}"
           " +--> +[0-9]{1,2}: ?[0-9]{1,2}: ?[0-9]{1,2}[,.] {0,2}[0-9]{1,2}",
-          (GRegexCompileFlags) (G_REGEX_RAW | G_REGEX_OPTIMIZE), (GRegexMatchFlags) (0), &gerr);
+          G_REGEX_RAW | G_REGEX_OPTIMIZE, 0, &gerr);
       if (result == NULL) {
         g_warning ("Compilation of subrip regex failed: %s", gerr->message);
         g_error_free (gerr);
@@ -1282,7 +1283,7 @@ gst_ttml_parse_data_format_autodetect_regex_once (GstTtmlParseRegex regtype)
       break;
     case GST_TTML_PARSE_REGEX_DKS:
       result = (gpointer) g_regex_new ("^\\[[0-9]+:[0-9]+:[0-9]+\\].*",
-          (GRegexCompileFlags) (G_REGEX_RAW | G_REGEX_OPTIMIZE), (GRegexMatchFlags) (0), &gerr);
+          G_REGEX_RAW | G_REGEX_OPTIMIZE, 0, &gerr);
       if (result == NULL) {
         g_warning ("Compilation of dks regex failed: %s", gerr->message);
         g_error_free (gerr);
@@ -1527,7 +1528,7 @@ feed_textbuf (GstTtmlParse * self, GstBuffer * buf)
   gst_adapter_push (self->adapter, buf);
 
   avail = gst_adapter_available (self->adapter);
-  data = (const guint8 *) gst_adapter_map (self->adapter, avail);
+  data = gst_adapter_map (self->adapter, avail);
   input = convert_encoding (self, (const gchar *) data, avail, &consumed);
 
   if (input && consumed > 0) {
@@ -1883,7 +1884,7 @@ static GstStaticCaps ttml_caps = GST_STATIC_CAPS ("application/ttml+xml");
 
 
 static void
-gst_ttmlparse_type_find (GstTypeFind * tf, gpointer priv)
+gst_ttmlparse_type_find (GstTypeFind * tf, gpointer private)
 {
   GstTtmlParseFormat format;
   const guint8 *data;
@@ -1896,7 +1897,7 @@ gst_ttmlparse_type_find (GstTypeFind * tf, gpointer priv)
     return;
 
   /* make sure string passed to _autodetect() is NUL-terminated */
-  str = (gchar *) g_malloc0 (129);
+  str = g_malloc0 (129);
   memcpy (str, data, 128);
 
   if ((encoding = detect_encoding (str, 128)) != NULL) {

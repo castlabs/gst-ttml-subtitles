@@ -227,7 +227,7 @@ gst_subtitle_block_get_element (const GstSubtitleBlock * block, guint index)
   if (index >= block->elements->len)
     return NULL;
   else
-    return (const GstSubtitleElement*)(g_ptr_array_index (block->elements, index));
+    return g_ptr_array_index (block->elements, index);
 }
 
 static void
@@ -324,6 +324,6 @@ gst_subtitle_region_get_block (const GstSubtitleRegion * region, guint index)
   if (index >= region->blocks->len)
     return NULL;
   else
-    return (const GstSubtitleBlock*)(g_ptr_array_index (region->blocks, index));
+    return g_ptr_array_index (region->blocks, index);
 }
 
