@@ -55,11 +55,11 @@
 #include <glib.h>
 
 #include "gstttmlparse.h"
-//#include "samiparse.h"
-//#include "tmplayerparse.h"
-//#include "mpl2parse.h"
-//#include "qttextparse.h"
-//#include "ttmlparse.h"
+#include "samiparse.h"
+#include "tmplayerparse.h"
+#include "mpl2parse.h"
+#include "qttextparse.h"
+#include "ttmlparse.h"
 #include "SubtitleParserWrapper.h"
 
 GST_DEBUG_CATEGORY (ttml_parse_debug);
@@ -370,7 +370,6 @@ gst_ttml_parse_set_property (GObject * object, guint prop_id,
     }
     case PROP_FORCED_ONLY:
     {
-
       ttmlparse->forced_only = g_value_get_boolean(value);
       GST_DEBUG_OBJECT(object, "forced only subtitles set to %d\n", ttmlparse->forced_only);
       break;
@@ -407,26 +406,26 @@ static const gchar *
 gst_ttml_parse_get_format_description (GstTtmlParseFormat format)
 {
   switch (format) {
-    //case GST_TTML_PARSE_FORMAT_MDVDSUB:
-    //  return "MicroDVD";
-    //case GST_TTML_PARSE_FORMAT_SUBRIP:
-    //  return "SubRip";
-    //case GST_TTML_PARSE_FORMAT_MPSUB:
-    //  return "MPSub";
-    //case GST_TTML_PARSE_FORMAT_SAMI:
-    //  return "SAMI";
-    //case GST_TTML_PARSE_FORMAT_TMPLAYER:
-    //  return "TMPlayer";
-    //case GST_TTML_PARSE_FORMAT_MPL2:
-    //  return "MPL2";
-    //case GST_TTML_PARSE_FORMAT_SUBVIEWER:
-    //  return "SubViewer";
-    //case GST_TTML_PARSE_FORMAT_DKS:
-    //  return "DKS";
-    //case GST_TTML_PARSE_FORMAT_QTTEXT:
-    //  return "QTtext";
-    //case GST_TTML_PARSE_FORMAT_LRC:
-      //return "LRC";
+    case GST_TTML_PARSE_FORMAT_MDVDSUB:
+      return "MicroDVD";
+    case GST_TTML_PARSE_FORMAT_SUBRIP:
+      return "SubRip";
+    case GST_TTML_PARSE_FORMAT_MPSUB:
+      return "MPSub";
+    case GST_TTML_PARSE_FORMAT_SAMI:
+      return "SAMI";
+    case GST_TTML_PARSE_FORMAT_TMPLAYER:
+      return "TMPlayer";
+    case GST_TTML_PARSE_FORMAT_MPL2:
+      return "MPL2";
+    case GST_TTML_PARSE_FORMAT_SUBVIEWER:
+      return "SubViewer";
+    case GST_TTML_PARSE_FORMAT_DKS:
+      return "DKS";
+    case GST_TTML_PARSE_FORMAT_QTTEXT:
+      return "QTtext";
+    case GST_TTML_PARSE_FORMAT_LRC:
+      return "LRC";
     case GST_TTML_PARSE_FORMAT_TTML:
       return "EBUTT";
     default:
@@ -1234,12 +1233,12 @@ parser_state_dispose (GstTtmlParse * self, ParserState * state)
   }
   if (state->user_data) {
     switch (self->parser_type) {
-      //case GST_TTML_PARSE_FORMAT_QTTEXT:
-      //  qttext_context_deinit (state);
-      //  break;
-      //case GST_TTML_PARSE_FORMAT_SAMI:
-      //  sami_context_deinit (state);
-      //  break;
+      case GST_TTML_PARSE_FORMAT_QTTEXT:
+        qttext_context_deinit (state);
+        break;
+      case GST_TTML_PARSE_FORMAT_SAMI:
+        sami_context_deinit (state);
+        break;
       default:
         break;
     }
@@ -1328,49 +1327,49 @@ gst_ttml_parse_data_format_autodetect (gchar * match_str)
   subrip_grx = (GRegex *) subrip_rx_once.retval;
   dks_grx = (GRegex *) dks_rx_once.retval;
 
-  //if (g_regex_match (mdvd_grx, match_str, 0, NULL)) {
-  //  GST_LOG ("MicroDVD (frame based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_MDVDSUB;
-  //}
-  //if (g_regex_match (subrip_grx, match_str, 0, NULL)) {
-  //  GST_LOG ("SubRip (time based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_SUBRIP;
-  //}
-  //if (g_regex_match (dks_grx, match_str, 0, NULL)) {
-  //  GST_LOG ("DKS (time based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_DKS;
-  //}
+  if (g_regex_match (mdvd_grx, match_str, 0, NULL)) {
+    GST_LOG ("MicroDVD (frame based) format detected");
+    return GST_TTML_PARSE_FORMAT_MDVDSUB;
+  }
+  if (g_regex_match (subrip_grx, match_str, 0, NULL)) {
+    GST_LOG ("SubRip (time based) format detected");
+    return GST_TTML_PARSE_FORMAT_SUBRIP;
+  }
+  if (g_regex_match (dks_grx, match_str, 0, NULL)) {
+    GST_LOG ("DKS (time based) format detected");
+    return GST_TTML_PARSE_FORMAT_DKS;
+  }
 
-  //if (!strncmp (match_str, "FORMAT=TIME", 11)) {
-  //  GST_LOG ("MPSub (time based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_MPSUB;
-  //}
-  //if (strstr (match_str, "<SAMI>") != NULL ||
-  //    strstr (match_str, "<sami>") != NULL) {
-  //  GST_LOG ("SAMI (time based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_SAMI;
-  //}
-  ///* we're boldly assuming the first subtitle appears within the first hour */
-  //if (sscanf (match_str, "0:%02u:%02u:", &n1, &n2) == 2 ||
-  //    sscanf (match_str, "0:%02u:%02u=", &n1, &n2) == 2 ||
-  //    sscanf (match_str, "00:%02u:%02u:", &n1, &n2) == 2 ||
-  //    sscanf (match_str, "00:%02u:%02u=", &n1, &n2) == 2 ||
-  //    sscanf (match_str, "00:%02u:%02u,%u=", &n1, &n2, &n3) == 3) {
-  //  GST_LOG ("TMPlayer (time based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_TMPLAYER;
-  //}
-  //if (sscanf (match_str, "[%u][%u]", &n1, &n2) == 2) {
-  //  GST_LOG ("MPL2 (time based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_MPL2;
-  //}
-  //if (strstr (match_str, "[INFORMATION]") != NULL) {
-  //  GST_LOG ("SubViewer (time based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_SUBVIEWER;
-  //}
-  //if (strstr (match_str, "{QTtext}") != NULL) {
-  //  GST_LOG ("QTtext (time based) format detected");
-  //  return GST_TTML_PARSE_FORMAT_QTTEXT;
-  //}
+  if (!strncmp (match_str, "FORMAT=TIME", 11)) {
+    GST_LOG ("MPSub (time based) format detected");
+    return GST_TTML_PARSE_FORMAT_MPSUB;
+  }
+  if (strstr (match_str, "<SAMI>") != NULL ||
+      strstr (match_str, "<sami>") != NULL) {
+    GST_LOG ("SAMI (time based) format detected");
+    return GST_TTML_PARSE_FORMAT_SAMI;
+  }
+  /* we're boldly assuming the first subtitle appears within the first hour */
+  if (sscanf (match_str, "0:%02u:%02u:", &n1, &n2) == 2 ||
+      sscanf (match_str, "0:%02u:%02u=", &n1, &n2) == 2 ||
+      sscanf (match_str, "00:%02u:%02u:", &n1, &n2) == 2 ||
+      sscanf (match_str, "00:%02u:%02u=", &n1, &n2) == 2 ||
+      sscanf (match_str, "00:%02u:%02u,%u=", &n1, &n2, &n3) == 3) {
+    GST_LOG ("TMPlayer (time based) format detected");
+    return GST_TTML_PARSE_FORMAT_TMPLAYER;
+  }
+  if (sscanf (match_str, "[%u][%u]", &n1, &n2) == 2) {
+    GST_LOG ("MPL2 (time based) format detected");
+    return GST_TTML_PARSE_FORMAT_MPL2;
+  }
+  if (strstr (match_str, "[INFORMATION]") != NULL) {
+    GST_LOG ("SubViewer (time based) format detected");
+    return GST_TTML_PARSE_FORMAT_SUBVIEWER;
+  }
+  if (strstr (match_str, "{QTtext}") != NULL) {
+    GST_LOG ("QTtext (time based) format detected");
+    return GST_TTML_PARSE_FORMAT_QTTEXT;
+  }
   /* We assume the LRC file starts immediately */
   if (match_str[0] == '[') {
     gboolean all_lines_good = TRUE;
@@ -1396,8 +1395,8 @@ gst_ttml_parse_data_format_autodetect (gchar * match_str)
     }
     g_strfreev (split);
 
-    //if (all_lines_good)
-    //  return GST_TTML_PARSE_FORMAT_LRC;
+    if (all_lines_good)
+      return GST_TTML_PARSE_FORMAT_LRC;
   }
 
   if (match_str) {
@@ -1428,49 +1427,49 @@ gst_ttml_parse_format_autodetect (GstTtmlParse * self)
   parser_state_init (&self->state);
 
   switch (format) {
-    //case GST_TTML_PARSE_FORMAT_MDVDSUB:
-    //  self->parse_line = parse_mdvdsub;
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "pango-markup", NULL);
-    //case GST_TTML_PARSE_FORMAT_SUBRIP:
-    //  self->parse_line = parse_subrip;
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "pango-markup", NULL);
-    //case GST_TTML_PARSE_FORMAT_MPSUB:
-    //  self->parse_line = parse_mpsub;
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "utf8", NULL);
-    //case GST_TTML_PARSE_FORMAT_SAMI:
-    //  self->parse_line = parse_sami;
-    //  sami_context_init (&self->state);
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "pango-markup", NULL);
-    //case GST_TTML_PARSE_FORMAT_TMPLAYER:
-    //  self->parse_line = parse_tmplayer;
-    //  self->state.max_duration = 5 * GST_SECOND;
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "utf8", NULL);
-    //case GST_TTML_PARSE_FORMAT_MPL2:
-    //  self->parse_line = parse_mpl2;
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "pango-markup", NULL);
-    //case GST_TTML_PARSE_FORMAT_DKS:
-    //  self->parse_line = parse_dks;
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "utf8", NULL);
-    //case GST_TTML_PARSE_FORMAT_SUBVIEWER:
-    //  self->parse_line = parse_subviewer;
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "utf8", NULL);
-    //case GST_TTML_PARSE_FORMAT_QTTEXT:
-    //  self->parse_line = parse_qttext;
-    //  qttext_context_init (&self->state);
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "pango-markup", NULL);
-    //case GST_TTML_PARSE_FORMAT_LRC:
-    //  self->parse_line = parse_lrc;
-    //  return gst_caps_new_simple ("text/x-raw",
-    //      "format", G_TYPE_STRING, "utf8", NULL);
+    case GST_TTML_PARSE_FORMAT_MDVDSUB:
+      self->parse_line = parse_mdvdsub;
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "pango-markup", NULL);
+    case GST_TTML_PARSE_FORMAT_SUBRIP:
+      self->parse_line = parse_subrip;
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "pango-markup", NULL);
+    case GST_TTML_PARSE_FORMAT_MPSUB:
+      self->parse_line = parse_mpsub;
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "utf8", NULL);
+    case GST_TTML_PARSE_FORMAT_SAMI:
+      self->parse_line = parse_sami;
+      sami_context_init (&self->state);
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "pango-markup", NULL);
+    case GST_TTML_PARSE_FORMAT_TMPLAYER:
+      self->parse_line = parse_tmplayer;
+      self->state.max_duration = 5 * GST_SECOND;
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "utf8", NULL);
+    case GST_TTML_PARSE_FORMAT_MPL2:
+      self->parse_line = parse_mpl2;
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "pango-markup", NULL);
+    case GST_TTML_PARSE_FORMAT_DKS:
+      self->parse_line = parse_dks;
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "utf8", NULL);
+    case GST_TTML_PARSE_FORMAT_SUBVIEWER:
+      self->parse_line = parse_subviewer;
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "utf8", NULL);
+    case GST_TTML_PARSE_FORMAT_QTTEXT:
+      self->parse_line = parse_qttext;
+      qttext_context_init (&self->state);
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "pango-markup", NULL);
+    case GST_TTML_PARSE_FORMAT_LRC:
+      self->parse_line = parse_lrc;
+      return gst_caps_new_simple ("text/x-raw",
+          "format", G_TYPE_STRING, "utf8", NULL);
     case GST_TTML_PARSE_FORMAT_TTML:
     {
       GstCaps *caps;
@@ -1516,8 +1515,8 @@ feed_textbuf (GstTtmlParse * self, GstBuffer * buf)
     parser_state_init (&self->state);
     g_string_truncate (self->textbuf, 0);
     gst_adapter_clear (self->adapter);
-    //if (self->parser_type == GST_TTML_PARSE_FORMAT_SAMI)
-    //  sami_context_reset (&self->state);
+    if (self->parser_type == GST_TTML_PARSE_FORMAT_SAMI)
+      sami_context_reset (&self->state);
     /* we could set a flag to make sure that the next buffer we push out also
      * has the DISCONT flag set, but there's no point really given that it's
      * subtitles which are discontinuous by nature. */
@@ -1606,66 +1605,54 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
   }
 
   if (g_strcmp0 (self->subtitle_codec, "EBUTT") == 0) {
-    GList* subtitle;
-    CParser* ttml_parser = parse_ttml(self->textbuf->str, self->forced_only);
+    GList *subtitle;
+    GTimer *timer = g_timer_new ();
+
+    CParser *ttml_parser = parse_ttml (self->textbuf->str, self->forced_only);
     if (ttml_parser == NULL) {
-      GstEvent* event = gst_event_new_gap(GST_BUFFER_PTS(buf), GST_BUFFER_DURATION(buf));
-      gst_pad_push_event(self->srcpad, event);
+      GstEvent *event = gst_event_new_gap (GST_BUFFER_PTS (buf), GST_BUFFER_DURATION (buf));
+      gst_pad_push_event (self->srcpad, event);
       return GST_FLOW_OK;
     }
 
     //? for some reason gst_buffer_new gives buf address for the new buffer in getSubtitleList()
     //so we store needed buf data here
     GstClockTime buf_end_time = buf->pts + buf->duration;
-    GList* subtitle_list = get_subtitles(ttml_parser);
-    //for (size_t subtitleIndex = 0; subtitleIndex < subtitles.size(); ++subtitleIndex) {
-    for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
-        GstBuffer* op_buffer = subtitle->data;
-        if (self->segment.position > GST_BUFFER_PTS(op_buffer))
-            continue;
-        self->segment.position = GST_BUFFER_PTS(op_buffer);
-        ret = gst_pad_push(self->srcpad, op_buffer);
-        if (ret == GST_FLOW_OK && subtitle->next == NULL) {
-            //notify that renderer shouldn't expect more subtitle buffers
-            //if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
-            GstClockTime last_subtitle_end_time = op_buffer->pts + op_buffer->duration;
-            if (buf_end_time > last_subtitle_end_time) {
-                GstEvent* event = gst_event_new_gap(last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
-                gst_pad_push_event(self->srcpad, event);
-            }
+    GList *subtitle_list = get_subtitles(ttml_parser);
 
-            return GST_FLOW_OK;
+    g_timer_stop (timer);
+    GST_CAT_INFO (ttml_parse_debug, "Time to parse file: %gms",
+        g_timer_elapsed (timer, NULL) * 1000.0);
+    g_timer_destroy (timer);
+
+    for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
+      GstBuffer *op_buffer = subtitle->data;
+      if (self->segment.position > GST_BUFFER_PTS (op_buffer))
+        continue;
+      self->segment.position = GST_BUFFER_PTS (op_buffer);
+
+      GST_DEBUG_OBJECT (self, "Sending buffer %p, %llu %llu",
+          op_buffer, GST_BUFFER_PTS (op_buffer),
+          GST_BUFFER_DURATION (op_buffer));
+
+      ret = gst_pad_push (self->srcpad, op_buffer);
+      if (ret == GST_FLOW_OK && subtitle->next == NULL) {
+        //notify that renderer shouldn't expect more subtitle buffers
+        //if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
+        GstClockTime last_subtitle_end_time = op_buffer->pts + op_buffer->duration;
+        if (buf_end_time > last_subtitle_end_time) {
+          GstEvent *event = gst_event_new_gap (last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
+          gst_pad_push_event (self->srcpad, event);
         }
 
-        if (ret != GST_FLOW_OK)
-            GST_DEBUG_OBJECT(self, "flow: %s", gst_flow_get_name(ret));
+        return GST_FLOW_OK;
+      }
+
+      if (ret != GST_FLOW_OK)
+        GST_DEBUG_OBJECT (self, "flow: %s", gst_flow_get_name (ret));
     }
-    //GTimer *timer = g_timer_new ();
 
-
-    //GList *subtitle_list = ttml_parse (self->textbuf->str,
-    //    GST_BUFFER_PTS (buf), GST_BUFFER_DURATION (buf));
-
-    //g_timer_stop (timer);
-    //GST_CAT_INFO (ttml_parse_debug, "Time to parse file: %gms",
-    //    g_timer_elapsed (timer, NULL) * 1000.0);
-    //g_timer_destroy (timer);
-
-    //for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
-    //  GstBuffer *op_buffer = subtitle->data;
-    //  self->segment.position = GST_BUFFER_PTS (op_buffer);
-
-    //  GST_DEBUG_OBJECT (self, "Sending buffer %p, %llu %llu",
-    //      op_buffer, GST_BUFFER_PTS (op_buffer),
-    //      GST_BUFFER_DURATION (op_buffer));
-
-    //  ret = gst_pad_push (self->srcpad, op_buffer);
-
-    //  if (ret != GST_FLOW_OK)
-    //    GST_DEBUG_OBJECT (self, "flow: %s", gst_flow_get_name (ret));
-    //}
-
-    //g_list_free (subtitle_list);
+    g_list_free (subtitle_list);
   } else {
     while (!self->flushing && (line = get_next_line (self))) {
       guint offset = 0;
@@ -1750,20 +1737,20 @@ gst_ttml_parse_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
     case GST_EVENT_EOS:{
       /* Make sure the last subrip chunk is pushed out even
        * if the file does not have an empty line at the end */
-      //if (self->parser_type == GST_TTML_PARSE_FORMAT_SUBRIP ||
-      //    self->parser_type == GST_TTML_PARSE_FORMAT_TMPLAYER ||
-      //    self->parser_type == GST_TTML_PARSE_FORMAT_MPL2 ||
-      //    self->parser_type == GST_TTML_PARSE_FORMAT_QTTEXT) {
-      //  gchar term_chars[] = { '\n', '\n', '\0' };
-      //  GstBuffer *buf = gst_buffer_new_and_alloc (2 + 1);
+      if (self->parser_type == GST_TTML_PARSE_FORMAT_SUBRIP ||
+          self->parser_type == GST_TTML_PARSE_FORMAT_TMPLAYER ||
+          self->parser_type == GST_TTML_PARSE_FORMAT_MPL2 ||
+          self->parser_type == GST_TTML_PARSE_FORMAT_QTTEXT) {
+        gchar term_chars[] = { '\n', '\n', '\0' };
+        GstBuffer *buf = gst_buffer_new_and_alloc (2 + 1);
 
-      //  GST_DEBUG ("EOS. Pushing remaining text (if any)");
-      //  gst_buffer_fill (buf, 0, term_chars, 3);
-      //  gst_buffer_set_size (buf, 2);
+        GST_DEBUG ("EOS. Pushing remaining text (if any)");
+        gst_buffer_fill (buf, 0, term_chars, 3);
+        gst_buffer_set_size (buf, 2);
 
-      //  GST_BUFFER_OFFSET (buf) = self->offset;
-      //  gst_ttml_parse_chain (pad, parent, buf);
-      //}
+        GST_BUFFER_OFFSET (buf) = self->offset;
+        gst_ttml_parse_chain (pad, parent, buf);
+      }
       ret = gst_pad_event_default (pad, parent, event);
       break;
     }
@@ -1943,50 +1930,50 @@ gst_ttmlparse_type_find (GstTypeFind * tf, gpointer private)
   g_free (str);
 
   switch (format) {
-    //case GST_TTML_PARSE_FORMAT_MDVDSUB:
-    //  GST_DEBUG ("MicroDVD format detected");
-    //  caps = SUB_CAPS;
-    //  break;
-    //case GST_TTML_PARSE_FORMAT_SUBRIP:
-    //  GST_DEBUG ("SubRip format detected");
-    //  caps = SUB_CAPS;
-    //  break;
-    //case GST_TTML_PARSE_FORMAT_MPSUB:
-    //  GST_DEBUG ("MPSub format detected");
-    //  caps = SUB_CAPS;
-    //  break;
-    //case GST_TTML_PARSE_FORMAT_SAMI:
-    //  GST_DEBUG ("SAMI (time-based) format detected");
-    //  caps = SAMI_CAPS;
-    //  break;
-    //case GST_TTML_PARSE_FORMAT_TMPLAYER:
-    //  GST_DEBUG ("TMPlayer (time based) format detected");
-    //  caps = TMP_CAPS;
-    //  break;
-    //  /* FIXME: our MPL2 typefinding is not really good enough to warrant
-    //   * returning a high probability (however, since we registered our
-    //   * typefinder here with a rank of MARGINAL we should pretty much only
-    //   * be called if most other typefinders have already run */
-    //case GST_TTML_PARSE_FORMAT_MPL2:
-    //  GST_DEBUG ("MPL2 (time based) format detected");
-    //  caps = MPL2_CAPS;
-    //  break;
-    //case GST_TTML_PARSE_FORMAT_SUBVIEWER:
-    //  GST_DEBUG ("SubViewer format detected");
-    //  caps = SUB_CAPS;
-    //  break;
-    //case GST_TTML_PARSE_FORMAT_DKS:
-    //  GST_DEBUG ("DKS format detected");
-    //  caps = DKS_CAPS;
-    //  break;
-    //case GST_TTML_PARSE_FORMAT_QTTEXT:
-    //  GST_DEBUG ("QTtext format detected");
-    //  caps = QTTEXT_CAPS;
-    //  break;
-    //case GST_TTML_PARSE_FORMAT_LRC:
-    //  GST_DEBUG ("LRC format detected");
-    //  caps = LRC_CAPS;
-    //  break;
+    case GST_TTML_PARSE_FORMAT_MDVDSUB:
+      GST_DEBUG ("MicroDVD format detected");
+      caps = SUB_CAPS;
+      break;
+    case GST_TTML_PARSE_FORMAT_SUBRIP:
+      GST_DEBUG ("SubRip format detected");
+      caps = SUB_CAPS;
+      break;
+    case GST_TTML_PARSE_FORMAT_MPSUB:
+      GST_DEBUG ("MPSub format detected");
+      caps = SUB_CAPS;
+      break;
+    case GST_TTML_PARSE_FORMAT_SAMI:
+      GST_DEBUG ("SAMI (time-based) format detected");
+      caps = SAMI_CAPS;
+      break;
+    case GST_TTML_PARSE_FORMAT_TMPLAYER:
+      GST_DEBUG ("TMPlayer (time based) format detected");
+      caps = TMP_CAPS;
+      break;
+      /* FIXME: our MPL2 typefinding is not really good enough to warrant
+       * returning a high probability (however, since we registered our
+       * typefinder here with a rank of MARGINAL we should pretty much only
+       * be called if most other typefinders have already run */
+    case GST_TTML_PARSE_FORMAT_MPL2:
+      GST_DEBUG ("MPL2 (time based) format detected");
+      caps = MPL2_CAPS;
+      break;
+    case GST_TTML_PARSE_FORMAT_SUBVIEWER:
+      GST_DEBUG ("SubViewer format detected");
+      caps = SUB_CAPS;
+      break;
+    case GST_TTML_PARSE_FORMAT_DKS:
+      GST_DEBUG ("DKS format detected");
+      caps = DKS_CAPS;
+      break;
+    case GST_TTML_PARSE_FORMAT_QTTEXT:
+      GST_DEBUG ("QTtext format detected");
+      caps = QTTEXT_CAPS;
+      break;
+    case GST_TTML_PARSE_FORMAT_LRC:
+      GST_DEBUG ("LRC format detected");
+      caps = LRC_CAPS;
+      break;
     case GST_TTML_PARSE_FORMAT_TTML:
       GST_DEBUG ("TTML format detected");
       caps = TTML_CAPS;
