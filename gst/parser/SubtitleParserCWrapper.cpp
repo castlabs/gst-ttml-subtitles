@@ -1,4 +1,4 @@
-#include "SubtitleParserWrapper.h"
+#include "SubtitleParserCWrapper.h"
 #include "SubtitleParser.h"
 
 extern "C"

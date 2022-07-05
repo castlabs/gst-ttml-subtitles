@@ -60,7 +60,7 @@
 #include "mpl2parse.h"
 #include "qttextparse.h"
 #include "ttmlparse.h"
-#include "SubtitleParserWrapper.h"
+#include "SubtitleParserCWrapper.h"
 
 GST_DEBUG_CATEGORY (ttml_parse_debug);
 
