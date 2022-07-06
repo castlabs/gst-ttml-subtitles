@@ -1,6 +1,7 @@
 lib_LTLIBRARIES = libgstsubtitle-@GST_API_VERSION@.la
 
 libgstsubtitle_@GST_API_VERSION@_la_SOURCES = \
+	TimedTextCWrapper.cpp \
 	gstsubtitle.c \
 	gstsubtitlemeta.c
 
@@ -10,6 +11,7 @@ libgstsubtitle_@GST_API_VERSION@includedir = \
 noinst_HEADERS =
 
 libgstsubtitle_@GST_API_VERSION@include_HEADERS = \
+	TimedTextCWrapper.h \
 	subtitle.h \
 	gstsubtitle.h \
 	gstsubtitlemeta.h
