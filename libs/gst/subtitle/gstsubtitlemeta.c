@@ -62,7 +62,7 @@ gst_subtitle_meta_free (GstMeta * meta, GstBuffer * buffer)
 const GstMetaInfo *
 gst_subtitle_meta_get_info (void)
 {
-  static const GstMetaInfo *subtitle_meta_info = NULL;
+  static GstMetaInfo *subtitle_meta_info = NULL;
 
   if (g_once_init_enter (&subtitle_meta_info)) {
     const GstMetaInfo *meta =
