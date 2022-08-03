@@ -1,5 +1,6 @@
-#include <gst/gst.h>
 #include <SubtitlesParserFactory.h>
+
+#include <gst/gst.h>
 #include <gst/subtitle/subtitle.h>
 
 GST_DEBUG_CATEGORY_STATIC(ttmlparse);

@@ -6,6 +6,16 @@
 
 #include <stdint.h>
 
+#if defined(gstttmlcommon_EXPORTS)
+#if defined(WIN32)
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT __attribute__ ((visibility ("default")))
+#endif
+#else
+#define DLLEXPORT
+#endif
+
 typedef struct CLengthExpression CLengthExpression;
 typedef struct CLengthExpression CFontSize; //horizontal font size
 typedef struct TextDecoration CTextDecoration;
@@ -21,17 +31,17 @@ typedef enum { pixel, em, cell, percentage } CLengthUnit;
 typedef enum { Horizontal, Vertical } COrientation;
 
 //CLengthExpression interface
-CLengthExpression* create_length_expression(double, CLengthUnit, COrientation);
-CLengthExpression* create_length_expression_from_value(double);
-void free_length_expression(CLengthExpression*);
-uint32_t to_pixel(CLengthExpression*, uint32_t, uint32_t);
+DLLEXPORT CLengthExpression* create_length_expression(double, CLengthUnit, COrientation);
+DLLEXPORT CLengthExpression* create_length_expression_from_value(double);
+DLLEXPORT void free_length_expression(CLengthExpression*);
+DLLEXPORT uint32_t to_pixel(CLengthExpression*, uint32_t, uint32_t);
 
 //-------------------------------------------------------------------
 //TextOutline interface
-void create_text_outline_default(CTextOutline*);
-bool is_text_outline_default(CTextOutline);
-bool is_text_outline_equal(CTextOutline, CTextOutline);
-void free_text_outline(CTextOutline);
+DLLEXPORT void create_text_outline_default(CTextOutline*);
+DLLEXPORT bool is_text_outline_default(CTextOutline);
+DLLEXPORT bool is_text_outline_equal(CTextOutline, CTextOutline);
+DLLEXPORT void free_text_outline(CTextOutline);
 
 //-------------------------------------------------------------------
 struct TextDecoration {

@@ -43,7 +43,7 @@ struct _GstSubtitleMeta {
   GPtrArray *regions;
 };
 
-GType gst_subtitle_meta_api_get_type (void);
+DLLEXPORT GType gst_subtitle_meta_api_get_type (void);
 #define GST_SUBTITLE_META_API_TYPE (gst_subtitle_meta_api_get_type())
 
 #define gst_buffer_get_subtitle_meta(b) \
@@ -56,7 +56,7 @@ gboolean gst_subtitle_meta_init (GstMeta * meta, gpointer params,
 
 void gst_subtitle_meta_free (GstMeta * meta, GstBuffer * buffer);
 
-const GstMetaInfo * gst_subtitle_meta_get_info (void);
+DLLEXPORT const GstMetaInfo * gst_subtitle_meta_get_info (void);
 
 GstSubtitleMeta * gst_buffer_add_subtitle_meta (GstBuffer * buffer,
     GPtrArray * regions);

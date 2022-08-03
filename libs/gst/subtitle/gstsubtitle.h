@@ -394,7 +394,7 @@ struct _GstSubtitleStyleSet {
   CTextOutline text_outline;
 };
 
-GstSubtitleStyleSet * gst_subtitle_style_set_new ();
+DLLEXPORT GstSubtitleStyleSet * gst_subtitle_style_set_new ();
 
 void gst_subtitle_style_set_free (GstSubtitleStyleSet * style_set);
 
@@ -429,8 +429,7 @@ struct _GstSubtitleElement
 
 GType gst_subtitle_element_get_type (void);
 
-GstSubtitleElement * gst_subtitle_element_new (GstSubtitleStyleSet * style_set,
-    guint text_index, gboolean suppress_whitespace);
+DLLEXPORT GstSubtitleElement * gst_subtitle_element_new (GstSubtitleStyleSet * style_set, guint text_index, gboolean suppress_whitespace);
 
 /**
  * gst_subtitle_element_ref:
@@ -485,16 +484,13 @@ struct _GstSubtitleBlock
 
 GType gst_subtitle_block_get_type (void);
 
-GstSubtitleBlock * gst_subtitle_block_new (GstSubtitleStyleSet * style_set);
+DLLEXPORT GstSubtitleBlock * gst_subtitle_block_new (GstSubtitleStyleSet * style_set);
 
-void gst_subtitle_block_add_element (
-    GstSubtitleBlock * block,
-    GstSubtitleElement * element);
+DLLEXPORT void gst_subtitle_block_add_element (GstSubtitleBlock * block, GstSubtitleElement * element);
 
-guint gst_subtitle_block_get_element_count (const GstSubtitleBlock * block);
+DLLEXPORT guint gst_subtitle_block_get_element_count (const GstSubtitleBlock * block);
 
-const GstSubtitleElement * gst_subtitle_block_get_element (
-    const GstSubtitleBlock * block, guint index);
+DLLEXPORT const GstSubtitleElement * gst_subtitle_block_get_element (const GstSubtitleBlock * block, guint index);
 
 /**
  * gst_subtitle_block_ref:
@@ -552,16 +548,13 @@ struct _GstSubtitleRegion
 
 GType gst_subtitle_region_get_type (void);
 
-GstSubtitleRegion * gst_subtitle_region_new (GstSubtitleStyleSet * style_set);
+DLLEXPORT GstSubtitleRegion * gst_subtitle_region_new (GstSubtitleStyleSet * style_set);
 
-void gst_subtitle_region_add_block (
-    GstSubtitleRegion * region,
-    GstSubtitleBlock * block);
+DLLEXPORT void gst_subtitle_region_add_block (GstSubtitleRegion * region, GstSubtitleBlock * block);
 
-guint gst_subtitle_region_get_block_count (const GstSubtitleRegion * region);
+DLLEXPORT guint gst_subtitle_region_get_block_count (const GstSubtitleRegion * region);
 
-const GstSubtitleBlock * gst_subtitle_region_get_block (
-    const GstSubtitleRegion * region, guint index);
+DLLEXPORT const GstSubtitleBlock * gst_subtitle_region_get_block (const GstSubtitleRegion * region, guint index);
 
 /**
  * gst_subtitle_region_ref:

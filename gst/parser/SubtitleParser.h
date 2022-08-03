@@ -1,6 +1,6 @@
-#include <gst/gst.h>
-#include <SubtitlesParserFactory.h>
 #include "SubtitleParserUtils.h"
+
+#include <gst/gst.h>
 #include <gst/subtitle/subtitle.h>
 
 namespace SubtitleParser
