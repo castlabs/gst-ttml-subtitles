@@ -2,6 +2,11 @@ plugin_LTLIBRARIES = libgstttmlparse.la
 
 # sources used to compile this plug-in
 libgstttmlparse_la_SOURCES = \
+	SubtitleParserCWrapper.cpp \
+	SubtitleParser.cpp \
+	SubtitleParser.h \
+	SubtitleParserUtils.cpp \
+	SubtitleParserUtils.h \
 	gstttmlparse.c \
 	gstttmlparse.h \
 	samiparse.c \
@@ -30,6 +35,9 @@ libgstttmlparse_la_LIBTOOLFLAGS = $(GST_PLUGIN_LIBTOOLFLAGS)
 
 # headers we need but don't want installed
 noinst_HEADERS = \
+	SubtitleParserCWrapper.h \
+	SubtitleParserUtils.h \
+	SubtitleParser.h \
 	gstttmlparse.h \
 	samiparse.h \
 	tmplayerparse.h \

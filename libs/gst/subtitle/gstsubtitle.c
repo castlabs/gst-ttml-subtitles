@@ -47,15 +47,19 @@ gst_subtitle_style_set_new ()
   GstSubtitleColor transparent = { 0, 0, 0, 0 };
 
   ret->font_family = g_strdup ("default");
-  ret->font_size = 1.0;
-  ret->line_height = 1.25;
+  ret->font_size = create_length_expression_from_value(100.0);//1.0;
+  ret->line_height = create_length_expression_from_value(125.0);//1.25;
   ret->color = white;
   ret->background_color = transparent;
   ret->line_padding = 0.0;
-  ret->origin_x = ret->origin_y = 0.0;
-  ret->extent_w = ret->extent_h = 0.0;
-  ret->padding_start = ret->padding_end
-    = ret->padding_before = ret->padding_after = 0.0;
+  ret->origin.x = ret->origin.y = create_length_expression_from_value(0.0);
+  ret->extent.x = ret->extent.y = create_length_expression_from_value(0.0);
+  ret->padding.bottom = ret->padding.left
+      = ret->padding.right = ret->padding.top = create_length_expression_from_value(0.0);   
+  ret->text_decoration.isLineThrough = false;
+  ret->text_decoration.isOverline = false;
+  ret->text_decoration.isUnderline = false;
+  create_text_outline_default(&ret->text_outline);
 
   return ret;
 }
@@ -70,6 +74,18 @@ void gst_subtitle_style_set_free (GstSubtitleStyleSet * style_set)
 {
   g_return_if_fail (style_set != NULL);
   g_free (style_set->font_family);
+  free_length_expression(style_set->font_size);
+  free_length_expression(style_set->line_height);
+  free_length_expression(style_set->origin.x);
+  free_length_expression(style_set->origin.y);
+  free_length_expression(style_set->extent.x);
+  free_length_expression(style_set->extent.y);
+  free_length_expression(style_set->padding.bottom);
+  free_length_expression(style_set->padding.left);
+  free_length_expression(style_set->padding.right);
+  free_length_expression(style_set->padding.top);
+  free_length_expression(style_set->padding.top);
+  free_text_outline(style_set->text_outline);
   g_slice_free (GstSubtitleStyleSet, style_set);
 }
 

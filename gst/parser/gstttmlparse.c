@@ -60,6 +60,7 @@
 #include "mpl2parse.h"
 #include "qttextparse.h"
 #include "ttmlparse.h"
+#include "SubtitleParserCWrapper.h"
 
 GST_DEBUG_CATEGORY (ttml_parse_debug);
 
@@ -69,7 +70,8 @@ enum
 {
   PROP_0,
   PROP_ENCODING,
-  PROP_VIDEOFPS
+  PROP_VIDEOFPS,
+  PROP_FORCED_ONLY
 };
 
 
@@ -190,6 +192,11 @@ gst_ttml_parse_class_init (GstTtmlParseClass * klass)
           "and the subtitle format requires it subtitles may be out of sync.",
           0, 1, G_MAXINT, 1, 24000, 1001,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property(object_class, PROP_FORCED_ONLY,
+      g_param_spec_boolean("only-forced-subtitles", "show only forced subtitles",
+          "Do not display subtitles unless they are marked as forced.", FALSE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -220,6 +227,7 @@ gst_ttml_parse_init (GstTtmlParse * ttmlparse)
 
   ttmlparse->fps_n = 24000;
   ttmlparse->fps_d = 1001;
+  ttmlparse->forced_only = FALSE;
 }
 
 /*
@@ -358,6 +366,12 @@ gst_ttml_parse_set_property (GObject * object, guint prop_id,
         ttmlparse->state.fps_n = ttmlparse->fps_n;
         ttmlparse->state.fps_d = ttmlparse->fps_d;
       }
+      break;
+    }
+    case PROP_FORCED_ONLY:
+    {
+      ttmlparse->forced_only = g_value_get_boolean(value);
+      GST_DEBUG_OBJECT(object, "forced only subtitles set to %d\n", ttmlparse->forced_only);
       break;
     }
     default:
@@ -1594,8 +1608,17 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     GList *subtitle;
     GTimer *timer = g_timer_new ();
 
-    GList *subtitle_list = ttml_parse (self->textbuf->str,
-        GST_BUFFER_PTS (buf), GST_BUFFER_DURATION (buf));
+    CParser *ttml_parser = parse_ttml (self->textbuf->str, self->forced_only);
+    if (ttml_parser == NULL) {
+      GstEvent *event = gst_event_new_gap (GST_BUFFER_PTS (buf), GST_BUFFER_DURATION (buf));
+      gst_pad_push_event (self->srcpad, event);
+      return GST_FLOW_OK;
+    }
+
+    //? for some reason gst_buffer_new gives buf address for the new buffer in getSubtitleList()
+    //so we store needed buf data here
+    GstClockTime buf_end_time = buf->pts + buf->duration;
+    GList *subtitle_list = get_subtitles(ttml_parser);
 
     g_timer_stop (timer);
     GST_CAT_INFO (ttml_parse_debug, "Time to parse file: %gms",
@@ -1604,6 +1627,8 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
 
     for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
       GstBuffer *op_buffer = subtitle->data;
+      if (self->segment.position > GST_BUFFER_PTS (op_buffer))
+        continue;
       self->segment.position = GST_BUFFER_PTS (op_buffer);
 
       GST_DEBUG_OBJECT (self, "Sending buffer %p, %llu %llu",
@@ -1611,6 +1636,17 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
           GST_BUFFER_DURATION (op_buffer));
 
       ret = gst_pad_push (self->srcpad, op_buffer);
+      if (ret == GST_FLOW_OK && subtitle->next == NULL) {
+        //notify that renderer shouldn't expect more subtitle buffers
+        //if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
+        GstClockTime last_subtitle_end_time = op_buffer->pts + op_buffer->duration;
+        if (buf_end_time > last_subtitle_end_time) {
+          GstEvent *event = gst_event_new_gap (last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
+          gst_pad_push_event (self->srcpad, event);
+        }
+
+        return GST_FLOW_OK;
+      }
 
       if (ret != GST_FLOW_OK)
         GST_DEBUG_OBJECT (self, "flow: %s", gst_flow_get_name (ret));
@@ -1736,6 +1772,7 @@ gst_ttml_parse_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
        * seek request and instead send us a newsegment from the seek request
        * it received via its video pads instead, so all is fine then too) */
       ret = TRUE;
+      self->need_segment = TRUE;
       gst_event_unref (event);
       break;
     }

@@ -53,6 +53,9 @@
 
 #include "gstttmlrender.h"
 #include <gst/subtitle/subtitle.h>
+#include <math.h>
+#include <stdint.h>
+#define ARRAY_LENGTH(a) (sizeof (a) / sizeof (a)[0])
 
 GST_DEBUG_CATEGORY_STATIC (ttmlrender);
 
@@ -1175,7 +1178,7 @@ _text_range_free (TextRange * range)
  * to the text of each element in @text_ranges. */
 static gchar *
 gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
-    const GstSubtitleBlock * block, GstBuffer * text_buf,
+    const GstSubtitleBlock * block, gdouble opacity, CTextOutline* block_text_outline, GstBuffer* text_buf,
     GPtrArray ** text_ranges)
 {
   const GstSubtitleElement *element;
@@ -1183,7 +1186,8 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
   GstMapInfo map;
   gchar *buf_text, *joined_text, *old_text;
   gchar *fgcolor, *font_size, *font_family, *font_style, *font_weight,
-        *underline;
+        *underline, *overline, *strikethrough;
+
   guint total_text_length = 0U;
   guint i;
 
@@ -1194,7 +1198,9 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
   *text_ranges =
     g_ptr_array_new_full (gst_subtitle_block_get_element_count (block),
       (GDestroyNotify) _text_range_free);
-
+  
+  bool no_text_outline = false;
+  guint text_outline_index = -1;  
   for (i = 0; i < gst_subtitle_block_get_element_count (block); ++i) {
     TextRange *range = g_slice_new0 (TextRange);
     element = gst_subtitle_block_get_element (block, i);
@@ -1205,7 +1211,8 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
       continue;
     }
 
-    buf_text = g_strndup ((const gchar *)map.data, map.size);
+    char* buf_text_raw = g_strndup ((const gchar *)map.data, map.size);
+    buf_text = g_markup_escape_text (buf_text_raw, strlen(buf_text_raw));
     if (!g_utf8_validate (buf_text, -1, NULL)) {
       GST_CAT_ERROR (ttmlrender, "Text in buffer us not valid UTF-8");
       gst_memory_unmap (mem, &map);
@@ -1215,21 +1222,50 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
 
     range->first_char = total_text_length;
 
+    //set only if each element(a.k.a <span>) has the same non-default value of text outline
+    if (is_text_outline_default (element->style_set->text_outline)) {
+      no_text_outline = true;
+    }
+
+    if (!no_text_outline) {
+      if (text_outline_index == -1) {
+        text_outline_index = i;
+      } else if (!is_text_outline_equal (gst_subtitle_block_get_element (block, text_outline_index)->style_set->text_outline,
+                     element->style_set->text_outline)) {
+        no_text_outline = true;
+      }
+    }
+
+    //composition with region opacity
+    element->style_set->color.a *= opacity;
     fgcolor = gst_ttml_render_color_to_string (element->style_set->color);
-    font_size = g_strdup_printf ("%u",
-        (guint) (round (element->style_set->font_size * render->height)));
+
+    //ignore font width
+    font_size = g_strdup_printf ("%u",        
+        (gulong)to_pixel(element->style_set->font_size, render->width, render->height));
     font_family =
       (g_strcmp0 (element->style_set->font_family, "default") == 0) ?
       "Monospace" : element->style_set->font_family;
-    font_style =
-      (element->style_set->font_style == GST_SUBTITLE_FONT_STYLE_NORMAL) ?
-      "normal" : "italic";
+
+    if(element->style_set->font_style == GST_SUBTITLE_FONT_STYLE_ITALIC)
+        font_style = "italic"; 
+    else if(element->style_set->font_style == GST_SUBTITLE_FONT_STYLE_OBLIQUE)
+        font_style = "oblique"; 
+    else
+        font_style = "normal";
+
     font_weight =
       (element->style_set->font_weight == GST_SUBTITLE_FONT_WEIGHT_NORMAL) ?
       "normal" : "bold";
-    underline = (element->style_set->text_decoration
-        == GST_SUBTITLE_TEXT_DECORATION_UNDERLINE) ? "single" : "none";
 
+    underline = (element->style_set->text_decoration.isUnderline ? "single" : "none");
+
+    //not supported yet
+    //since pango 1.46
+    //overline = (element->style_set->text_decoration.isOverline ? "single" : "none");
+    
+    strikethrough = (element->style_set->text_decoration.isLineThrough ? "true" : "false");
+ 
     old_text = joined_text;
     joined_text = g_strconcat (joined_text,
         "<span "
@@ -1239,10 +1275,12 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
           "font_style=\"", font_style, "\" ",
           "font_weight=\"", font_weight, "\" ",
           "underline=\"", underline, "\" ",
+          //"overline=\"", overline, "\" ",
+          "strikethrough=\"", strikethrough, "\" ",
         ">", buf_text, "</span>", NULL);
     GST_CAT_DEBUG (ttmlrender, "Joined text is now: %s", joined_text);
 
-    total_text_length += strlen (buf_text);
+    total_text_length += strlen(buf_text_raw);
     range->last_char = total_text_length - 1;
     GST_CAT_DEBUG (ttmlrender, "First character index: %u; last character  "
         "index: %u", range->first_char, range->last_char);
@@ -1250,21 +1288,139 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
 
     g_free (old_text);
     g_free (buf_text);
+    g_free (buf_text_raw);
     g_free (fgcolor);
     g_free (font_size);
     gst_memory_unmap (mem, &map);
     gst_memory_unref (mem);
   }
 
+  if (!no_text_outline && text_outline_index != -1) {
+      //allocated upstream
+      free_text_outline(*block_text_outline);
+      block_text_outline->blurRadius = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.blurRadius;
+      block_text_outline->thickness = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.thickness;
+      block_text_outline->colorARGB = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.colorARGB;
+  }
+
   return joined_text;
 }
 
+void blur_image_surface(cairo_surface_t* surface, int radius)
+{
+    cairo_surface_t* tmp;
+    int width, height;
+    int src_stride, dst_stride;
+    int x, y, z, w;
+    uint8_t* src, * dst;
+    uint32_t* s, * d, a, p;
+    int i, j, k;
+    uint8_t kernel[17];
+    const int size = ARRAY_LENGTH(kernel);
+    const int half = size / 2;
+
+    if(cairo_surface_status(surface))
+        return;
+
+    width = cairo_image_surface_get_width(surface);
+    height = cairo_image_surface_get_height(surface);
+
+    switch(cairo_image_surface_get_format(surface)) {
+    case CAIRO_FORMAT_A1:
+    default:
+        /* Don't even think about it! */
+        return;
+
+    case CAIRO_FORMAT_A8:
+        /* Handle a8 surfaces by effectively unrolling the loops by a
+         * factor of 4 - this is safe since we know that stride has to be a
+         * multiple of uint32_t. */
+        width /= 4;
+        break;
+
+    case CAIRO_FORMAT_RGB24:
+    case CAIRO_FORMAT_ARGB32:
+        break;
+    }
+
+    tmp = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    if(cairo_surface_status(tmp))
+        return;
+
+    src = cairo_image_surface_get_data(surface);
+    src_stride = cairo_image_surface_get_stride(surface);
+
+    dst = cairo_image_surface_get_data(tmp);
+    dst_stride = cairo_image_surface_get_stride(tmp);
+
+    a = 0;
+    for(i = 0; i < size; i++) {
+        double f = i - half;
+        a += kernel[i] = exp(-f * f / 30.0) * 80;
+    }
+
+    /* Horizontally blur from surface -> tmp */
+    for(i = 0; i < height; i++) {
+        s = (uint32_t*)(src + i * src_stride);
+        d = (uint32_t*)(dst + i * dst_stride);
+        for(j = 0; j < width; j++) {
+            if(radius < j && j < width - radius) {
+                d[j] = s[j];
+                continue;
+            }
+
+            x = y = z = w = 0;
+            for(k = 0; k < size; k++) {
+                if(j - half + k < 0 || j - half + k >= width)
+                    continue;
+
+                p = s[j - half + k];
+
+                x += ((p >> 24) & 0xff) * kernel[k];
+                y += ((p >> 16) & 0xff) * kernel[k];
+                z += ((p >> 8) & 0xff) * kernel[k];
+                w += ((p >> 0) & 0xff) * kernel[k];
+            }
+            d[j] = (x / a << 24) | (y / a << 16) | (z / a << 8) | w / a;
+        }
+    }
+
+    /* Then vertically blur from tmp -> surface */
+    for(i = 0; i < height; i++) {
+        s = (uint32_t*)(dst + i * dst_stride);
+        d = (uint32_t*)(src + i * src_stride);
+        for(j = 0; j < width; j++) {
+            if(radius <= i && i < height - radius) {
+                d[j] = s[j];
+                continue;
+            }
+
+            x = y = z = w = 0;
+            for(k = 0; k < size; k++) {
+                if(i - half + k < 0 || i - half + k >= height)
+                    continue;
+
+                s = (uint32_t*)(dst + (i - half + k) * dst_stride);
+                p = s[j];
+
+                x += ((p >> 24) & 0xff) * kernel[k];
+                y += ((p >> 16) & 0xff) * kernel[k];
+                z += ((p >> 8) & 0xff) * kernel[k];
+                w += ((p >> 0) & 0xff) * kernel[k];
+            }
+            d[j] = (x / a << 24) | (y / a << 16) | (z / a << 8) | w / a;
+        }
+    }
+
+    cairo_surface_destroy(tmp);
+    cairo_surface_mark_dirty(surface);
+}
 
 /* Render the text in a pango-markup string. */
 static GstTtmlRenderRenderedText *
 gst_ttml_render_draw_text (GstTtmlRender * render, const gchar * text,
     guint max_width, PangoAlignment alignment, guint line_height,
-    guint max_font_size, gboolean wrap)
+    guint max_font_size, gboolean wrap, CTextOutline* text_outline)
 {
   GstTtmlRenderClass *class;
   GstTtmlRenderRenderedText *ret;
@@ -1330,6 +1486,23 @@ gst_ttml_render_draw_text (GstTtmlRender * render, const gchar * text,
   cairo_set_operator (cairo_state, CAIRO_OPERATOR_OVER);
 
   /* Render layout. */
+  if (!is_text_outline_default (*text_outline)) {
+    pango_cairo_layout_path(cairo_state, ret->layout);
+
+    guint8 a = text_outline->colorARGB >> 24;
+    guint8 r = (text_outline->colorARGB >> 16) & 0xFF;
+    guint8 g = (text_outline->colorARGB >> 8) & 0xFF;
+    guint8 b = text_outline->colorARGB & 0xFF;
+
+    cairo_set_source_rgba(cairo_state, r, g, b, a);
+    cairo_set_line_width(cairo_state,  to_pixel(text_outline->thickness, render->width, render->height));
+    cairo_stroke(cairo_state);
+    pango_cairo_update_layout(cairo_state, ret->layout);
+
+    blur_image_surface(surface, to_pixel(text_outline->blurRadius, render->width, render->height));
+    cairo_fill(cairo_state);
+  }
+
   cairo_save (cairo_state);
   pango_cairo_show_layout (cairo_state, ret->layout);
   cairo_restore (cairo_state);
@@ -1392,17 +1565,18 @@ gst_ttml_render_elements_are_wrapped (GPtrArray * elements)
 
 
 /* Return the maximum font size used in an array of elements. */
-static gdouble
-gst_ttml_render_get_max_font_size (GPtrArray * elements)
+static gulong
+gst_ttml_render_get_max_font_size (GPtrArray * elements, GstTtmlRender* render)
 {
   GstSubtitleElement *element;
   guint i;
-  gdouble max_size = 0.0;
+  gulong max_size = 0;
 
   for (i = 0; i < elements->len; ++i) {
-    element = g_ptr_array_index (elements, i);
-    if (element->style_set->font_size > max_size)
-      max_size = element->style_set->font_size;
+    element = (GstSubtitleElement*)g_ptr_array_index (elements, i);
+    gulong curr_font_size = to_pixel(element->style_set->font_size, render->width, render->height);
+    if(curr_font_size > max_size)
+        max_size = curr_font_size;
   }
 
   return max_size;
@@ -1608,7 +1782,7 @@ gst_ttml_render_color_is_transparent (GstSubtitleColor * color)
 
 /* Render the background rectangles to be placed behind each element. */
 static GstTtmlRenderRenderedImage *
-gst_ttml_render_render_element_backgrounds (const GstSubtitleBlock * block,
+gst_ttml_render_render_element_backgrounds(GstTtmlRender * render, const GstSubtitleBlock * block,
     GPtrArray * char_ranges, PangoLayout * layout, guint origin_x,
     guint origin_y, guint line_height, guint line_padding, guint horiz_offset)
 {
@@ -1663,8 +1837,13 @@ gst_ttml_render_render_element_backgrounds (const GstSubtitleBlock * block,
           PANGO_PIXELS (line_pos.y));
 
       line_start = PANGO_PIXELS (line_pos.x) - horiz_offset;
-      line_end = (PANGO_PIXELS (line_pos.x) + line_extents.width)
-        - horiz_offset;
+      line_end = (PANGO_PIXELS(line_pos.x) + line_extents.width);
+
+      //for right-to-left text
+      if (line_extents.width < 0)
+          line_end += horiz_offset;
+      else
+          line_end -= horiz_offset;
 
       GST_CAT_LOG (ttmlrender, "line_extents.x:%d  line_extents.y:%d  "
           "line_extents.width:%d  line_extents.height:%d", line_extents.x,
@@ -1697,14 +1876,17 @@ gst_ttml_render_render_element_backgrounds (const GstSubtitleBlock * block,
 
       rect_width = (area_end - area_start);
 
+      //ignore font width
+      gint font_size = to_pixel(element->style_set->font_size, render->width, render->height);
+
       if (rect_width > 0) {     /* <br>s will result in zero-width rectangle */
         GstTtmlRenderRenderedImage *image, *tmp;
-        rectangle = gst_ttml_render_draw_rectangle (rect_width, line_height,
+        rectangle = gst_ttml_render_draw_rectangle(rect_width, font_size,
             element->style_set->background_color);
         image = gst_ttml_render_rendered_image_new (rectangle,
             origin_x + area_start,
             origin_y + (cur_line * line_height), rect_width,
-            line_height);
+            font_size);
         tmp = ret;
         ret = gst_ttml_render_rendered_image_combine (ret, image);
         if (tmp) gst_ttml_render_rendered_image_free (tmp);
@@ -1802,7 +1984,7 @@ gst_ttml_render_rendered_text_free (GstTtmlRenderRenderedText * text)
 
 static GstTtmlRenderRenderedImage *
 gst_ttml_render_render_text_block (GstTtmlRender * render,
-    const GstSubtitleBlock * block, GstBuffer * text_buf, guint width,
+    const GstSubtitleBlock * block, gdouble opacity, GstBuffer * text_buf, guint width,
     gboolean overflow)
 {
   GPtrArray *char_ranges = NULL;
@@ -1817,21 +1999,21 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
   GstTtmlRenderRenderedImage *ret;
 
   /* Join text from elements to form a single marked-up string. */
-  marked_up_string = gst_ttml_render_generate_marked_up_string (render, block,
+  CTextOutline block_text_outline;
+  create_text_outline_default(&block_text_outline);
+  marked_up_string = gst_ttml_render_generate_marked_up_string (render, block, opacity, &block_text_outline,
       text_buf, &char_ranges);
 
-  max_font_size = (guint) (gst_ttml_render_get_max_font_size (block->elements)
-      * render->height);
+  max_font_size = (guint) (gst_ttml_render_get_max_font_size (block->elements, render));
   GST_CAT_DEBUG (ttmlrender, "Max font size: %u", max_font_size);
-  line_height = (guint) round (block->style_set->line_height * max_font_size);
-
+  line_height = (guint)to_pixel(block->style_set->line_height, max_font_size, max_font_size);
   line_padding = (guint) (block->style_set->line_padding * render->width);
   alignment = gst_ttml_render_get_alignment (block->style_set);
 
   /* Render text to buffer. */
   rendered_text = gst_ttml_render_draw_text (render, marked_up_string,
       (width - (2 * line_padding)), alignment, line_height, max_font_size,
-      gst_ttml_render_elements_are_wrapped (block->elements));
+      gst_ttml_render_elements_are_wrapped (block->elements), &block_text_outline);
 
   switch (block->style_set->text_align) {
     case GST_SUBTITLE_TEXT_ALIGN_START:
@@ -1851,10 +2033,13 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
 
   rendered_text->text_image->x = text_offset;
 
-  /* Render background rectangles, if any. */
-  backgrounds = gst_ttml_render_render_element_backgrounds (block, char_ranges,
+  //composition with region opacity
+  block->style_set->background_color.a *= opacity;
+  /* Render background rectangles, if any. */    
+  backgrounds = gst_ttml_render_render_element_backgrounds(render, block, char_ranges,
       rendered_text->layout, text_offset - line_padding, 0,
-      (guint) (block->style_set->line_height * max_font_size),
+      //(guint) (block->style_set->line_height * max_font_size),
+      line_height,
       line_padding, rendered_text->horiz_offset);
 
   /* Render block background, if non-transparent. */
@@ -1885,6 +2070,9 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
 
   g_free (marked_up_string);
   g_ptr_array_unref (char_ranges);
+  if (is_text_outline_default(block_text_outline)) {
+      free_text_outline(block_text_outline);
+  }
   GST_CAT_DEBUG (ttmlrender, "block width: %u   block height: %u",
       ret->width, ret->height);
   return ret;
@@ -1923,20 +2111,26 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
   GstVideoOverlayComposition *ret = NULL;
   guint i;
 
-  region_width = (guint) (round (region->style_set->extent_w * render->width));
-  region_height =
-    (guint) (round (region->style_set->extent_h * render->height));
-  region_x = (guint) (round (region->style_set->origin_x * render->width));
-  region_y = (guint) (round (region->style_set->origin_y * render->height));
+  region_x = (guint)to_pixel(region->style_set->origin.x, render->width, render->height);
+  region_y = (guint)to_pixel(region->style_set->origin.y, render->width, render->height);
+
+  region_width = (guint)to_pixel(region->style_set->extent.x, render->width, render->height);
+  region_height = (guint)to_pixel(region->style_set->extent.y, render->width, render->height);
+
+  if(region_x + region_width > render->width)
+      region_width = render->width - region_x;
+
+  if(region_y + region_height > render->height)
+      region_height = render->height - region_y;
 
   padding_start =
-    (guint) (round (region->style_set->padding_start * render->width));
+      (guint)to_pixel(region->style_set->padding.left, region_width, region_height);
   padding_end =
-    (guint) (round (region->style_set->padding_end * render->width));
+      (guint)to_pixel(region->style_set->padding.right, region_width, region_height);
   padding_before =
-    (guint) (round (region->style_set->padding_before * render->height));
+      (guint)to_pixel(region->style_set->padding.top, region_width, region_height);
   padding_after =
-    (guint) (round (region->style_set->padding_after * render->height));
+      (guint)to_pixel(region->style_set->padding.bottom, region_width, region_height);
 
   /* "window" here refers to the section of the region that we're allowed to
    * render into, i.e., the region minus padding. */
@@ -1945,6 +2139,9 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
   window_width = region_width - (padding_start + padding_end);
   window_height = region_height - (padding_before + padding_after);
 
+  //opacity composition
+  region->style_set->background_color.a *= region->style_set->opacity;
+  
   GST_CAT_DEBUG (ttmlrender,
       "Padding: start: %u  end: %u  before: %u  after: %u",
       padding_start, padding_end, padding_before, padding_after);
@@ -1966,7 +2163,7 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
     GstTtmlRenderRenderedImage *rendered_block;
 
     block = gst_subtitle_region_get_block (region, i);
-    rendered_block = gst_ttml_render_render_text_block (render, block, text_buf,
+    rendered_block = gst_ttml_render_render_text_block (render, block, region->style_set->opacity, text_buf,
         window_width, TRUE);
 
     blocks = g_list_append (blocks, rendered_block);

@@ -25,6 +25,8 @@
 #include <gst/gst.h>
 #include <gst/gstminiobject.h>
 
+#include "TimedTextCWrapper.h"
+
 G_BEGIN_DECLS
 
 typedef struct _GstSubtitleColor GstSubtitleColor;
@@ -176,7 +178,8 @@ typedef enum {
  */
 typedef enum {
   GST_SUBTITLE_FONT_STYLE_NORMAL,
-  GST_SUBTITLE_FONT_STYLE_ITALIC
+  GST_SUBTITLE_FONT_STYLE_ITALIC,
+  GST_SUBTITLE_FONT_STYLE_OBLIQUE
 } GstSubtitleFontStyle;
 
 /**
@@ -369,28 +372,29 @@ typedef enum {
 struct _GstSubtitleStyleSet {
   GstSubtitleTextDirection text_direction;
   gchar *font_family;
-  gdouble font_size;
-  gdouble line_height;
+  CFontSize* font_size;
+  CLengthExpression* line_height;
   GstSubtitleTextAlign text_align;
   GstSubtitleColor color;
   GstSubtitleColor background_color;
   GstSubtitleFontStyle font_style;
-  GstSubtitleFontWeight font_weight;
-  GstSubtitleTextDecoration text_decoration;
+  GstSubtitleFontWeight font_weight; 
+  CTextDecoration text_decoration;
   GstSubtitleUnicodeBidi unicode_bidi;
   GstSubtitleWrapping wrap_option;
   GstSubtitleMultiRowAlign multi_row_align;
   gdouble line_padding;
-  gdouble origin_x, origin_y;
-  gdouble extent_w, extent_h;
+  CPointLen origin, extent;
   GstSubtitleDisplayAlign display_align;
-  gdouble padding_start, padding_end, padding_before, padding_after;
+  CPaddingLen padding;
   GstSubtitleWritingMode writing_mode;
   GstSubtitleBackgroundMode show_background;
   GstSubtitleOverflowMode overflow;
+  gdouble opacity;
+  CTextOutline text_outline;
 };
 
-GstSubtitleStyleSet * gst_subtitle_style_set_new ();
+DLLEXPORT GstSubtitleStyleSet * gst_subtitle_style_set_new ();
 
 void gst_subtitle_style_set_free (GstSubtitleStyleSet * style_set);
 
@@ -425,8 +429,7 @@ struct _GstSubtitleElement
 
 GType gst_subtitle_element_get_type (void);
 
-GstSubtitleElement * gst_subtitle_element_new (GstSubtitleStyleSet * style_set,
-    guint text_index, gboolean suppress_whitespace);
+DLLEXPORT GstSubtitleElement * gst_subtitle_element_new (GstSubtitleStyleSet * style_set, guint text_index, gboolean suppress_whitespace);
 
 /**
  * gst_subtitle_element_ref:
@@ -481,16 +484,13 @@ struct _GstSubtitleBlock
 
 GType gst_subtitle_block_get_type (void);
 
-GstSubtitleBlock * gst_subtitle_block_new (GstSubtitleStyleSet * style_set);
+DLLEXPORT GstSubtitleBlock * gst_subtitle_block_new (GstSubtitleStyleSet * style_set);
 
-void gst_subtitle_block_add_element (
-    GstSubtitleBlock * block,
-    GstSubtitleElement * element);
+DLLEXPORT void gst_subtitle_block_add_element (GstSubtitleBlock * block, GstSubtitleElement * element);
 
-guint gst_subtitle_block_get_element_count (const GstSubtitleBlock * block);
+DLLEXPORT guint gst_subtitle_block_get_element_count (const GstSubtitleBlock * block);
 
-const GstSubtitleElement * gst_subtitle_block_get_element (
-    const GstSubtitleBlock * block, guint index);
+DLLEXPORT const GstSubtitleElement * gst_subtitle_block_get_element (const GstSubtitleBlock * block, guint index);
 
 /**
  * gst_subtitle_block_ref:
@@ -548,16 +548,13 @@ struct _GstSubtitleRegion
 
 GType gst_subtitle_region_get_type (void);
 
-GstSubtitleRegion * gst_subtitle_region_new (GstSubtitleStyleSet * style_set);
+DLLEXPORT GstSubtitleRegion * gst_subtitle_region_new (GstSubtitleStyleSet * style_set);
 
-void gst_subtitle_region_add_block (
-    GstSubtitleRegion * region,
-    GstSubtitleBlock * block);
+DLLEXPORT void gst_subtitle_region_add_block (GstSubtitleRegion * region, GstSubtitleBlock * block);
 
-guint gst_subtitle_region_get_block_count (const GstSubtitleRegion * region);
+DLLEXPORT guint gst_subtitle_region_get_block_count (const GstSubtitleRegion * region);
 
-const GstSubtitleBlock * gst_subtitle_region_get_block (
-    const GstSubtitleRegion * region, guint index);
+DLLEXPORT const GstSubtitleBlock * gst_subtitle_region_get_block (const GstSubtitleRegion * region, guint index);
 
 /**
  * gst_subtitle_region_ref:
