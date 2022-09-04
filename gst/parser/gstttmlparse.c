@@ -1626,6 +1626,11 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     g_timer_destroy (timer);
 
     for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
+      if (self->flushing) {
+        g_list_free(subtitle_list);
+        return GST_FLOW_FLUSHING;
+      }
+
       GstBuffer *op_buffer = subtitle->data;
       if (self->segment.position > GST_BUFFER_PTS (op_buffer))
         continue;
