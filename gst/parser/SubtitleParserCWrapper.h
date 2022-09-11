@@ -13,9 +13,8 @@ extern "C" {
 #endif
 
 typedef struct CParser CParser;
-typedef enum CSubtitlesFormat { TTML, WebVTT } CSubtitlesFormat;
 
-CParser* parse_ttml(char*, CSubtitlesFormat, bool);
+CParser* parse_ttml(char*, bool);
 
 GList* get_subtitles(CParser*);
 

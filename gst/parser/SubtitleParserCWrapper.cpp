@@ -3,10 +3,9 @@
 
 extern "C"
 {
-	CParser* parse_ttml(char* doc, CSubtitlesFormat c_format, bool forced_only) {
+	CParser* parse_ttml(char* doc, bool forced_only) {
 		SubtitleParser::Parser* ttmlParser = new SubtitleParser::Parser();
-		auto format = static_cast<timedText::SubtitlesFormat>(c_format);
-		if (ttmlParser->Parse(doc, format, forced_only) == CLC_FAIL) {
+		if (ttmlParser->Parse(doc, forced_only) == CLC_FAIL) {
 			return NULL;
 		}
 		return reinterpret_cast<CParser*>(ttmlParser);
