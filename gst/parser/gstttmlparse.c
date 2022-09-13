@@ -1607,7 +1607,6 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
   if (g_strcmp0 (self->subtitle_codec, "EBUTT") == 0) {
     GList *subtitle;
     GTimer *timer = g_timer_new ();
-
     CParser *ttml_parser = parse_ttml (self->textbuf->str, self->forced_only);
     if (ttml_parser == NULL) {
       GstEvent *event = gst_event_new_gap (GST_BUFFER_PTS (buf), GST_BUFFER_DURATION (buf));

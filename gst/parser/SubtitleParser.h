@@ -5,12 +5,14 @@
 
 namespace SubtitleParser
 {
+	using timedText::SubtitlesFormat;
 	static const size_t defaultTrackId = 0;
+	static const std::vector<SubtitlesFormat> supportedSubtitlesTypes = { SubtitlesFormat::WebVTT , SubtitlesFormat::TTML };
 
 	class Parser
 	{
 	public:		
-		clc_Result Parse(const clc::String& doc, timedText::SubtitlesFormat format, bool forcedOnly = false);
+		clc_Result Parse(const clc::String& doc, bool forcedOnly = false);
 
 		std::vector<GstBuffer*> getSubtitles() { return sceneHandler->getSceneBuffers(); }
 
