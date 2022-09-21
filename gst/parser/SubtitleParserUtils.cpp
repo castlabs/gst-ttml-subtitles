@@ -290,8 +290,11 @@ guint Scene::addTextToBuffer(const gchar* text)
 		return -1;
 
 	mem = gst_allocator_alloc(NULL, strlen(text) + 1, NULL);
-	if(!gst_memory_map(mem, &map, GST_MAP_WRITE))
+	if(!gst_memory_map(mem, &map, GST_MAP_WRITE)) {
 		GST_CAT_ERROR(ttmlparse, "Failed to map memory.");
+		gst_allocator_free(NULL, mem);
+		return -1;
+	}
 
 	g_strlcpy((gchar*)map.data, text, map.size);
 	GST_CAT_DEBUG(ttmlparse, "Inserted following text into buffer: %s",
