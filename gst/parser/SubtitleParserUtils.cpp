@@ -384,6 +384,9 @@ int64_t SceneHandler::findNextTransition(int64_t timeUs)
 
 clc_Result SceneHandler::createScenes()
 {
+	GST_DEBUG_CATEGORY_INIT(ttmlparse, "ttmlparse", 0,
+		"TTML parser debug category");
+
 	int64_t timeUs = -1;
 	while((timeUs = findNextTransition(timeUs)) != std::numeric_limits<int64_t>::max())
 	{
