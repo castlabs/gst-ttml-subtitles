@@ -1607,8 +1607,9 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
   if (g_strcmp0 (self->subtitle_codec, "EBUTT") == 0) {
     GList *subtitle;
     GTimer *timer = g_timer_new ();
-    CParser *ttml_parser = parse_ttml (self->textbuf->str, self->forced_only);
-    if (ttml_parser == NULL) {
+
+    CParser* subs_parser = create_subs_parser();
+    if (!parse_subs(subs_parser, self->textbuf->str, self->forced_only)) {
       GstEvent *event = gst_event_new_gap (GST_BUFFER_PTS (buf), GST_BUFFER_DURATION (buf));
       gst_pad_push_event (self->srcpad, event);
       return GST_FLOW_OK;
@@ -1617,7 +1618,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     //? for some reason gst_buffer_new gives buf address for the new buffer in getSubtitleList()
     //so we store needed buf data here
     GstClockTime buf_end_time = buf->pts + buf->duration;
-    GList *subtitle_list = get_subtitles(ttml_parser);
+    GList *subtitle_list = get_subtitles(subs_parser);
 
     g_timer_stop (timer);
     GST_CAT_INFO (ttml_parse_debug, "Time to parse file: %gms",
@@ -1657,6 +1658,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     }
 
     g_list_free (subtitle_list);
+    destroy_subs_parser(subs_parser);
   } else {
     while (!self->flushing && (line = get_next_line (self))) {
       guint offset = 0;

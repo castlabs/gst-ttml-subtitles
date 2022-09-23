@@ -14,9 +14,10 @@ extern "C" {
 
 typedef struct CParser CParser;
 
-CParser* parse_ttml(char*, bool);
-
+CParser* create_subs_parser();
+bool parse_subs(CParser*, char*, bool);
 GList* get_subtitles(CParser*);
+void destroy_subs_parser(CParser*);
 
 #ifdef __cplusplus
 }

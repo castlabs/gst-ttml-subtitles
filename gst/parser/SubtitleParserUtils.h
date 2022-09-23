@@ -70,7 +70,6 @@ namespace SubtitleParserUtils
 		int64_t findNextTransition(int64_t timestamp);
 
 	private:
-		//reference to Parser pool
 		const timedText::SubtitlesPool& pool;
 		std::vector<std::unique_ptr<Scene>> scenes;
 		const size_t trackId;
