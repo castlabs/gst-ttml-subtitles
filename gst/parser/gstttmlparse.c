@@ -1636,7 +1636,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
         continue;
       self->segment.position = GST_BUFFER_PTS (op_buffer);
 
-      GST_DEBUG_OBJECT (self, "Sending buffer %p, %llu %llu",
+      GST_DEBUG_OBJECT (self, "Sending buffer %p, %" G_GUINT64_FORMAT " %" G_GUINT64_FORMAT,
           op_buffer, GST_BUFFER_PTS (op_buffer),
           GST_BUFFER_DURATION (op_buffer));
 
