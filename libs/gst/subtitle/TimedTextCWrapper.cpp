@@ -51,7 +51,7 @@ extern "C"
 		auto* rhs_thickness = reinterpret_cast<timedText::LengthExpression*>(rhs.thickness);
 
 		return lhs_blur_radius == rhs_blur_radius &&
-			lhs_thickness == lhs_thickness &&
+			lhs_thickness == rhs_thickness &&
 			lhs.colorARGB == rhs.colorARGB;
 	}
 
