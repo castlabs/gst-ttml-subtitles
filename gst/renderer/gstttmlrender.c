@@ -1241,8 +1241,8 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
     fgcolor = gst_ttml_render_color_to_string (element->style_set->color);
 
     //ignore font width
-    font_size = g_strdup_printf ("%u",        
-        (gulong)to_pixel(element->style_set->font_size, render->width, render->height));
+    font_size = g_strdup_printf ("%"G_GUINT64_FORMAT,
+        (guint64)to_pixel(element->style_set->font_size, render->width, render->height));
     font_family =
       (g_strcmp0 (element->style_set->font_family, "default") == 0) ?
       "Monospace" : element->style_set->font_family;

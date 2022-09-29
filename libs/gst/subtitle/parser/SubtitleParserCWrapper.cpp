@@ -3,12 +3,17 @@
 
 extern "C"
 {
-	CParser* parse_ttml(char* doc, bool forced_only) {
+	CParser* create_subs_parser() {
 		SubtitleParser::Parser* ttmlParser = new SubtitleParser::Parser();
-		if (ttmlParser->Parse(doc, forced_only) == CLC_FAIL) {
-			return NULL;
-		}
 		return reinterpret_cast<CParser*>(ttmlParser);
+	}
+
+	bool parse_subs(CParser* c_parser, char* doc, bool forced_only) {
+		SubtitleParser::Parser* parser = reinterpret_cast<SubtitleParser::Parser*>(c_parser);
+		if (parser->Parse(doc, forced_only) == CLC_FAIL) {
+			return false;
+		}
+		return true;
 	}
 
 	GList* get_subtitles(CParser* c_parser) {
@@ -21,5 +26,10 @@ extern "C"
 		}
 		
 		return ret;
+	}
+
+	void destroy_subs_parser(CParser* c_parser) {
+		SubtitleParser::Parser* parser = reinterpret_cast<SubtitleParser::Parser*>(c_parser);
+		delete parser;
 	}
 }
