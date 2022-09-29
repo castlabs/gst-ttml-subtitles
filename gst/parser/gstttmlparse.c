@@ -1609,7 +1609,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     GTimer *timer = g_timer_new ();
 
     CParser* subs_parser = create_subs_parser();
-    if (!parse_subs(subs_parser, self->textbuf->str, self->forced_only)) {
+    if (!subs_parser || !parse_subs(subs_parser, self->textbuf->str, self->forced_only)) {
       GstEvent *event = gst_event_new_gap (GST_BUFFER_PTS (buf), GST_BUFFER_DURATION (buf));
       gst_pad_push_event (self->srcpad, event);
       return GST_FLOW_OK;
