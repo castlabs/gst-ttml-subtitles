@@ -1632,7 +1632,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
       }
 
       GstBuffer *op_buffer = subtitle->data;
-      if (self->segment.position > GST_BUFFER_PTS (op_buffer))
+      if (self->segment.position > GST_BUFFER_PTS (op_buffer) + GST_BUFFER_DURATION(op_buffer))
         continue;
       self->segment.position = GST_BUFFER_PTS (op_buffer);
 
