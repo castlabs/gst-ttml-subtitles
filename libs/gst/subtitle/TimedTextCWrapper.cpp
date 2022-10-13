@@ -21,7 +21,7 @@ extern "C"
 
 	uint32_t to_pixel(CLengthExpression* len_expr, uint32_t width, uint32_t height) {
 		timedText::LengthExpression* original_len_expr = reinterpret_cast<timedText::LengthExpression*>(len_expr);
-		return original_len_expr->toPixel(timedText::Point<uint32_t>{ width, height });
+		return original_len_expr->toPixel(timedText::Point<timedText::Px>{ width, height });
 	}
 
 	bool is_default_c_length_expression(CLengthExpression* c_len_expr) {
