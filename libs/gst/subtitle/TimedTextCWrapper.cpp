@@ -19,7 +19,7 @@ extern "C"
 		delete original_len_expr;
 	}
 
-	uint32_t to_pixel(CLengthExpression* len_expr, uint32_t width, uint32_t height) {
+	int32_t to_pixel(CLengthExpression* len_expr, int32_t width, int32_t height) {
 		timedText::LengthExpression* original_len_expr = reinterpret_cast<timedText::LengthExpression*>(len_expr);
 		return original_len_expr->toPixel(timedText::Point<timedText::Px>{ width, height });
 	}
