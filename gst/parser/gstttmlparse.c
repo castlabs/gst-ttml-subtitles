@@ -395,6 +395,9 @@ gst_ttml_parse_get_property (GObject * object, guint prop_id,
     case PROP_VIDEOFPS:
       gst_value_set_fraction (value, ttmlparse->fps_n, ttmlparse->fps_d);
       break;
+    case PROP_FORCED_ONLY:
+      g_value_set_boolean (value, ttmlparse->forced_only);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
