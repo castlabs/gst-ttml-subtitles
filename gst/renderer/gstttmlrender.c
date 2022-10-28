@@ -1191,17 +1191,20 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
   guint total_text_length = 0U;
   guint i;
 
+  guint element_count = gst_subtitle_block_get_element_count (block);
+  if (0 == element_count)
+    return NULL;
+
   joined_text = g_strdup ("");
 
   if (*text_ranges != NULL)
     g_ptr_array_unref (*text_ranges);
   *text_ranges =
-    g_ptr_array_new_full (gst_subtitle_block_get_element_count (block),
-      (GDestroyNotify) _text_range_free);
+    g_ptr_array_new_full (element_count, (GDestroyNotify) _text_range_free);
   
   bool no_text_outline = false;
   guint text_outline_index = -1;  
-  for (i = 0; i < gst_subtitle_block_get_element_count (block); ++i) {
+  for (i = 0; i < element_count; ++i) {
     TextRange *range = g_slice_new0 (TextRange);
     element = gst_subtitle_block_get_element (block, i);
     mem = gst_buffer_get_memory (text_buf, element->text_index);
@@ -2004,6 +2007,9 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
   marked_up_string = gst_ttml_render_generate_marked_up_string (render, block, opacity, &block_text_outline,
       text_buf, &char_ranges);
 
+  if (!marked_up_string)
+    return NULL;
+
   max_font_size = (guint) (gst_ttml_render_get_max_font_size (block->elements, render));
   GST_CAT_DEBUG (ttmlrender, "Max font size: %u", max_font_size);
   line_height = (guint)to_pixel(block->style_set->line_height, max_font_size, max_font_size);
@@ -2166,7 +2172,8 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
     rendered_block = gst_ttml_render_render_text_block (render, block, region->style_set->opacity, text_buf,
         window_width, TRUE);
 
-    blocks = g_list_append (blocks, rendered_block);
+    if (rendered_block)
+      blocks = g_list_append (blocks, rendered_block);
   }
 
   if (blocks) {
@@ -2206,6 +2213,9 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
     if (tmp) gst_ttml_render_rendered_image_free (tmp);
     gst_ttml_render_rendered_image_free (blocks_image);
   }
+
+  if (!region_image)
+    return NULL;
 
   GST_CAT_DEBUG (ttmlrender, "Height of rendered region: %u",
       region_image->height);
@@ -2376,8 +2386,9 @@ wait_for_text_buf:
             g_assert (region != NULL);
             composition = gst_ttml_render_render_text_region (render, region,
                 render->text_buffer);
-            render->compositions = g_list_append (render->compositions,
-                composition);
+            if (composition)
+                render->compositions = g_list_append (render->compositions,
+                    composition);
           }
           render->need_render = FALSE;
         }
