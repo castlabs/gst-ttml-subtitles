@@ -2007,8 +2007,10 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
   marked_up_string = gst_ttml_render_generate_marked_up_string (render, block, opacity, &block_text_outline,
       text_buf, &char_ranges);
 
-  if (!marked_up_string)
+  if (!marked_up_string) {
+    free_text_outline(block_text_outline);
     return NULL;
+  }
 
   max_font_size = (guint) (gst_ttml_render_get_max_font_size (block->elements, render));
   GST_CAT_DEBUG (ttmlrender, "Max font size: %u", max_font_size);
