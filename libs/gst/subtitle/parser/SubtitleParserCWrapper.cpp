@@ -32,4 +32,14 @@ extern "C"
 		SubtitleParser::Parser* parser = reinterpret_cast<SubtitleParser::Parser*>(c_parser);
 		delete parser;
 	}
-}
+
+	void free_subtitles (GList* list) {
+		for (GList* subtitle = list; subtitle; subtitle = subtitle->next) {
+			GstBuffer* buffer = reinterpret_cast<GstBuffer*>(subtitle->data);
+			auto meta = gst_buffer_get_subtitle_meta (buffer);
+			g_ptr_array_unref (meta->regions);
+		}
+		g_list_free (list);
+	}
+
+  }

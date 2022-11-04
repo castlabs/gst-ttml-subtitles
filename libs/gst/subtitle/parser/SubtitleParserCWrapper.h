@@ -27,7 +27,8 @@ typedef struct CParser CParser;
 DLLEXPORT CParser* create_subs_parser();
 DLLEXPORT bool parse_subs(CParser*, char*, bool);
 DLLEXPORT GList* get_subtitles(CParser*);
-DLLEXPORT void destroy_subs_parser(CParser*);
+DLLEXPORT void free_subtitles (GList*);
+DLLEXPORT void destroy_subs_parser (CParser*);
 
 #ifdef __cplusplus
 }
