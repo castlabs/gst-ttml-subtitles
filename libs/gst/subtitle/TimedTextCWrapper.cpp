@@ -27,7 +27,9 @@ extern "C"
 	bool is_default_c_length_expression(CLengthExpression* c_len_expr) {
 		auto* default_len_expr = reinterpret_cast<timedText::LengthExpression*>(create_length_expression_from_value(0.0));
 		auto* len_expr = reinterpret_cast<timedText::LengthExpression*>(c_len_expr);
-		return (&default_len_expr == &len_expr);
+		auto res = &default_len_expr == &len_expr;
+		delete default_len_expr; 
+		return res;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
