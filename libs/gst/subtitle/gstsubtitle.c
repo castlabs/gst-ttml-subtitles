@@ -80,14 +80,14 @@ void gst_subtitle_style_set_free (GstSubtitleStyleSet * style_set)
   g_free (style_set->font_family);
   free_length_expression(style_set->font_size);
   free_length_expression(style_set->line_height);
-  free_length_expression (style_set->origin.x);
-  free_length_expression (style_set->origin.y);
-  free_length_expression (style_set->extent.x);
-  free_length_expression (style_set->extent.y);
-  free_length_expression (style_set->padding.bottom);
-  free_length_expression (style_set->padding.left);
-  free_length_expression (style_set->padding.right);
-  free_length_expression (style_set->padding.top);
+  free_length_expression(style_set->origin.x);
+  free_length_expression(style_set->origin.y);
+  free_length_expression(style_set->extent.x);
+  free_length_expression(style_set->extent.y);
+  free_length_expression(style_set->padding.bottom);
+  free_length_expression(style_set->padding.left);
+  free_length_expression(style_set->padding.right);
+  free_length_expression(style_set->padding.top);
   free_text_outline (style_set->text_outline);
   g_slice_free (GstSubtitleStyleSet, style_set);
 }
