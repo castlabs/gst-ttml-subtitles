@@ -1615,7 +1615,8 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     if (!subs_parser || !parse_subs(subs_parser, self->textbuf->str, self->forced_only)) {
       GstEvent *event = gst_event_new_gap (GST_BUFFER_PTS (buf), GST_BUFFER_DURATION (buf));
       gst_pad_push_event (self->srcpad, event);
-      destroy_subs_parser (subs_parser);
+      if (subs_parser)
+        destroy_subs_parser (subs_parser);
       return GST_FLOW_OK;
     }
 
@@ -1623,7 +1624,6 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     //so we store needed buf data here
     GstClockTime buf_end_time = buf->pts + buf->duration;
     GList *subtitle_list = get_subtitles(subs_parser);
-    destroy_subs_parser (subs_parser);
 
     g_timer_stop (timer);
     GST_CAT_INFO (ttml_parse_debug, "Time to parse file: %gms",
@@ -1633,6 +1633,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
       if (self->flushing) {
         free_subtitles (subtitle_list);
+        destroy_subs_parser (subs_parser);
         return GST_FLOW_FLUSHING;
       }
 
@@ -1656,6 +1657,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
         }
 
         free_subtitles (subtitle_list);
+        destroy_subs_parser (subs_parser);
         return GST_FLOW_OK;
       }
 
@@ -1664,6 +1666,7 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     }
 
     free_subtitles (subtitle_list);
+    destroy_subs_parser (subs_parser);
   } else {
     while (!self->flushing && (line = get_next_line (self))) {
       guint offset = 0;
