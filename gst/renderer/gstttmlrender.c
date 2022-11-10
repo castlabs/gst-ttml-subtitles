@@ -1302,8 +1302,8 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
   if (!no_text_outline && text_outline_index != -1) {
       //allocated upstream
       free_text_outline(*block_text_outline);
-      block_text_outline->blurRadius = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.blurRadius;
-      block_text_outline->thickness = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.thickness;
+      block_text_outline->blurRadius = copy_length_expression(gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.blurRadius);
+      block_text_outline->thickness = copy_length_expression(gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.thickness);
       block_text_outline->colorARGB = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.colorARGB;
   }
 

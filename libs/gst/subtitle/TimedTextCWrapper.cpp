@@ -14,6 +14,14 @@ extern "C"
 		return reinterpret_cast<CLengthExpression*>(len_expr);
 	}
 
+	CLengthExpression* copy_length_expression(CLengthExpression* len_expr) {
+		if (!len_expr)
+			return NULL;
+		timedText::LengthExpression* original_len_expr = reinterpret_cast<timedText::LengthExpression*>(len_expr);
+		auto* len_expr_copy = new timedText::LengthExpression(*original_len_expr);
+		return reinterpret_cast<CLengthExpression*>(len_expr_copy);
+	}
+
 	void free_length_expression(CLengthExpression* len_expr) {
 		timedText::LengthExpression* original_len_expr = reinterpret_cast<timedText::LengthExpression*>(len_expr);
 		delete original_len_expr;

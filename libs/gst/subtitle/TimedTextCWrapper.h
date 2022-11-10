@@ -33,6 +33,7 @@ typedef enum { Horizontal, Vertical } COrientation;
 //CLengthExpression interface
 DLLEXPORT CLengthExpression* create_length_expression(double, CLengthUnit, COrientation);
 DLLEXPORT CLengthExpression* create_length_expression_from_value(double);
+DLLEXPORT CLengthExpression* copy_length_expression(CLengthExpression*);
 DLLEXPORT void free_length_expression(CLengthExpression*);
 DLLEXPORT int32_t to_pixel(CLengthExpression*, int32_t, int32_t);
 
