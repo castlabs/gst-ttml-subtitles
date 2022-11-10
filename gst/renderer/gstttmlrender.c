@@ -2076,7 +2076,6 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
   gst_ttml_render_rendered_image_free (backgrounds);
   gst_ttml_render_rendered_text_free (rendered_text);
 
-  free_text_outline (block_text_outline);
   g_free (marked_up_string);
   g_ptr_array_unref (char_ranges);
   if (is_text_outline_default(block_text_outline)) {

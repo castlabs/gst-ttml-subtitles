@@ -1629,7 +1629,6 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     GST_CAT_INFO (ttml_parse_debug, "Time to parse file: %gms",
         g_timer_elapsed (timer, NULL) * 1000.0);
     g_timer_destroy (timer);
-
     for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
       if (self->flushing) {
         free_subtitles (subtitle_list);
@@ -1656,7 +1655,6 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
           gst_pad_push_event (self->srcpad, event);
         }
 
-        free_subtitles (subtitle_list);
         destroy_subs_parser (subs_parser);
         return GST_FLOW_OK;
       }

@@ -22,7 +22,7 @@ extern "C"
 		GList* ret = NULL;
 
 		for (auto subtitle : subtitles) {
-			ret = g_list_append(ret, gst_buffer_ref(subtitle));
+			ret = g_list_append(ret, subtitle);
 		}
 		
 		return ret;
@@ -33,13 +33,12 @@ extern "C"
 		delete parser;
 	}
 
-	void free_subtitles (GList* list) {
+	void free_subtitles(GList* list) {
 		for (GList* subtitle = list; subtitle; subtitle = subtitle->next) {
 			GstBuffer* buffer = reinterpret_cast<GstBuffer*>(subtitle->data);
-			auto meta = gst_buffer_get_subtitle_meta (buffer);
-			g_ptr_array_unref (meta->regions);
+     		gst_buffer_unref(buffer);
 		}
-		g_list_free (list);
+		g_list_free(list);
 	}
 
   }
