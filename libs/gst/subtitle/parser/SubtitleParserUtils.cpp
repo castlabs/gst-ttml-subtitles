@@ -34,6 +34,7 @@ namespace {
 
 		void setCLengthExpression(CLengthExpression** expression, timedText::LengthExpression tt_expression) 
 		{
+			*expression = writable_length_expression(*expression);
 			auto original_len_expr = reinterpret_cast<timedText::LengthExpression*> (*expression);
 			original_len_expr->value = tt_expression.value;
 			original_len_expr->unit = tt_expression.unit;
