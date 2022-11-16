@@ -1093,6 +1093,7 @@ gst_ttml_render_text_chain (GstPad * pad, GstObject * parent,
       GST_TTML_RENDER_WAIT (render);
       GST_DEBUG ("Pad %s:%s resuming", GST_DEBUG_PAD_NAME (pad));
       if (render->text_flushing) {
+        gst_buffer_unref (buffer);
         GST_TTML_RENDER_UNLOCK (render);
         ret = GST_FLOW_FLUSHING;
         goto beach;
@@ -2078,9 +2079,7 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
 
   g_free (marked_up_string);
   g_ptr_array_unref (char_ranges);
-  if (is_text_outline_default(block_text_outline)) {
-      free_text_outline(block_text_outline);
-  }
+  free_text_outline (block_text_outline);
   GST_CAT_DEBUG (ttmlrender, "block width: %u   block height: %u",
       ret->width, ret->height);
   return ret;

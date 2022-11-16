@@ -33,12 +33,4 @@ extern "C"
 		delete parser;
 	}
 
-	void free_subtitles(GList* list) {
-		for (GList* subtitle = list; subtitle; subtitle = subtitle->next) {
-			GstBuffer* buffer = reinterpret_cast<GstBuffer*>(subtitle->data);
-			gst_buffer_unref(buffer);
-		}
-		g_list_free(list);
-	}
-
   }

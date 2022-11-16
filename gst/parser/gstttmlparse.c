@@ -1631,14 +1631,15 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     g_timer_destroy (timer);
     for (subtitle = subtitle_list; subtitle; subtitle = subtitle->next) {
       if (self->flushing) {
-        free_subtitles (subtitle_list);
-        destroy_subs_parser (subs_parser);
-        return GST_FLOW_FLUSHING;
+        ret = GST_FLOW_FLUSHING;
+        break;
       }
 
       GstBuffer *op_buffer = subtitle->data;
-      if (self->segment.position > GST_BUFFER_PTS (op_buffer) + GST_BUFFER_DURATION(op_buffer))
+      if (self->segment.position > GST_BUFFER_PTS (op_buffer) + GST_BUFFER_DURATION(op_buffer)) {
+        gst_buffer_unref (op_buffer);
         continue;
+      }
       self->segment.position = GST_BUFFER_PTS (op_buffer);
 
       GST_DEBUG_OBJECT (self, "Sending buffer %p, %" G_GUINT64_FORMAT " %" G_GUINT64_FORMAT,
@@ -1646,24 +1647,23 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
           GST_BUFFER_DURATION (op_buffer));
 
       ret = gst_pad_push (self->srcpad, op_buffer);
-      if (ret == GST_FLOW_OK && subtitle->next == NULL) {
-        //notify that renderer shouldn't expect more subtitle buffers
-        //if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
+      if (ret != GST_FLOW_OK)
+        GST_DEBUG_OBJECT (self, "flow: %s", gst_flow_get_name (ret));
+      else if (!subtitle->next) {
+        // notify that renderer shouldn't expect more subtitle buffers
+        // if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
         GstClockTime last_subtitle_end_time = op_buffer->pts + op_buffer->duration;
         if (buf_end_time > last_subtitle_end_time) {
           GstEvent *event = gst_event_new_gap (last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
           gst_pad_push_event (self->srcpad, event);
         }
-
-        destroy_subs_parser (subs_parser);
-        return GST_FLOW_OK;
       }
-
-      if (ret != GST_FLOW_OK)
-        GST_DEBUG_OBJECT (self, "flow: %s", gst_flow_get_name (ret));
+    }
+    for (; subtitle; subtitle = subtitle->next) {
+      gst_buffer_unref (subtitle->data);
     }
 
-    free_subtitles (subtitle_list);
+    g_list_free (subtitle_list);
     destroy_subs_parser (subs_parser);
   } else {
     while (!self->flushing && (line = get_next_line (self))) {
