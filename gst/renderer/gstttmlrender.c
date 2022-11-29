@@ -1047,6 +1047,7 @@ gst_ttml_render_text_chain (GstPad * pad, GstObject * parent,
   GST_TTML_RENDER_LOCK (render);
 
   if (render->text_flushing) {
+    gst_buffer_unref (buffer);
     GST_TTML_RENDER_UNLOCK (render);
     ret = GST_FLOW_FLUSHING;
     GST_LOG_OBJECT (render, "text flushing");
@@ -1054,6 +1055,7 @@ gst_ttml_render_text_chain (GstPad * pad, GstObject * parent,
   }
 
   if (render->text_eos) {
+    gst_buffer_unref (buffer);
     GST_TTML_RENDER_UNLOCK (render);
     ret = GST_FLOW_EOS;
     GST_LOG_OBJECT (render, "text EOS");
