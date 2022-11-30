@@ -4,8 +4,12 @@
 
 extern "C"
 {
+	CLengthExpression* default_length_expression() {
+		return nullptr;
+	}
+
 	CLengthExpression* create_length_expression(double value, CLengthUnit unit, COrientation orientation) {
-		auto* len_expr =  new timedText::LengthExpression(value, static_cast<timedText::LengthUnit>(unit), static_cast<timedText::Orientation>(orientation));
+		auto* len_expr = new timedText::LengthExpression(value, static_cast<timedText::LengthUnit>(unit), static_cast<timedText::Orientation>(orientation));
 		return reinterpret_cast<CLengthExpression*>(len_expr);
 	}
 
@@ -14,33 +18,47 @@ extern "C"
 		return reinterpret_cast<CLengthExpression*>(len_expr);
 	}
 
+	CLengthExpression* copy_length_expression(CLengthExpression* len_expr) {
+		if (!len_expr)
+			return len_expr;
+		auto* len_expr_copy = new timedText::LengthExpression(*reinterpret_cast<timedText::LengthExpression*>(len_expr));
+		return reinterpret_cast<CLengthExpression*>(len_expr_copy);
+	}
+
+	CLengthExpression* writable_length_expression(CLengthExpression* len_expr) {
+		if (len_expr)
+			return len_expr;
+		auto* len_expr_copy = new timedText::LengthExpression();
+		return reinterpret_cast<CLengthExpression*>(len_expr_copy);
+	}
+
 	void free_length_expression(CLengthExpression* len_expr) {
-		timedText::LengthExpression* original_len_expr = reinterpret_cast<timedText::LengthExpression*>(len_expr);
-		delete original_len_expr;
+		delete reinterpret_cast<timedText::LengthExpression*>(len_expr);
 	}
 
 	int32_t to_pixel(CLengthExpression* len_expr, int32_t width, int32_t height) {
+		if (!len_expr)
+			return 0;
 		timedText::LengthExpression* original_len_expr = reinterpret_cast<timedText::LengthExpression*>(len_expr);
 		return original_len_expr->toPixel(timedText::Point<timedText::Px>{ width, height });
 	}
 
-	bool is_default_c_length_expression(CLengthExpression* c_len_expr) {
-		auto* default_len_expr = reinterpret_cast<timedText::LengthExpression*>(create_length_expression_from_value(0.0));
-		auto* len_expr = reinterpret_cast<timedText::LengthExpression*>(c_len_expr);
-		return (&default_len_expr == &len_expr);
+	static bool is_default_length_expression(CLengthExpression* len_expr) {
+		return !len_expr;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
+
 	void create_text_outline_default(CTextOutline* text_outline) {		
-		text_outline->thickness = create_length_expression_from_value(0.0),
-		text_outline->blurRadius = create_length_expression_from_value(0.0);
+		text_outline->thickness = default_length_expression();
+		text_outline->blurRadius = default_length_expression();
 		text_outline->colorARGB = 0;
 	}
 
-	bool is_text_outline_default(CTextOutline c_text_outline) {
-		return is_default_c_length_expression(c_text_outline.blurRadius) &&
-			is_default_c_length_expression(c_text_outline.thickness) &&
-			c_text_outline.colorARGB == 0;
+	bool is_text_outline_default(CTextOutline text_outline) {
+		return is_default_length_expression(text_outline.blurRadius) &&
+			is_default_length_expression(text_outline.thickness) &&
+			text_outline.colorARGB == 0;
 	}
 
 	bool is_text_outline_equal(CTextOutline lhs, CTextOutline rhs) {
@@ -55,9 +73,9 @@ extern "C"
 			lhs.colorARGB == rhs.colorARGB;
 	}
 
-	void free_text_outline(CTextOutline c_text_outline) {
-		free_length_expression(c_text_outline.blurRadius);
-		free_length_expression(c_text_outline.thickness);
+	void free_text_outline(CTextOutline text_outline) {
+		free_length_expression(text_outline.blurRadius);
+		free_length_expression(text_outline.thickness);
 	}
 
 }

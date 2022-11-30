@@ -1047,6 +1047,7 @@ gst_ttml_render_text_chain (GstPad * pad, GstObject * parent,
   GST_TTML_RENDER_LOCK (render);
 
   if (render->text_flushing) {
+    gst_buffer_unref (buffer);
     GST_TTML_RENDER_UNLOCK (render);
     ret = GST_FLOW_FLUSHING;
     GST_LOG_OBJECT (render, "text flushing");
@@ -1054,6 +1055,7 @@ gst_ttml_render_text_chain (GstPad * pad, GstObject * parent,
   }
 
   if (render->text_eos) {
+    gst_buffer_unref (buffer);
     GST_TTML_RENDER_UNLOCK (render);
     ret = GST_FLOW_EOS;
     GST_LOG_OBJECT (render, "text EOS");
@@ -1093,6 +1095,7 @@ gst_ttml_render_text_chain (GstPad * pad, GstObject * parent,
       GST_TTML_RENDER_WAIT (render);
       GST_DEBUG ("Pad %s:%s resuming", GST_DEBUG_PAD_NAME (pad));
       if (render->text_flushing) {
+        gst_buffer_unref (buffer);
         GST_TTML_RENDER_UNLOCK (render);
         ret = GST_FLOW_FLUSHING;
         goto beach;
@@ -1301,8 +1304,8 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
   if (!no_text_outline && text_outline_index != -1) {
       //allocated upstream
       free_text_outline(*block_text_outline);
-      block_text_outline->blurRadius = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.blurRadius;
-      block_text_outline->thickness = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.thickness;
+      block_text_outline->blurRadius = copy_length_expression(gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.blurRadius);
+      block_text_outline->thickness = copy_length_expression(gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.thickness);
       block_text_outline->colorARGB = gst_subtitle_block_get_element(block, text_outline_index)->style_set->text_outline.colorARGB;
   }
 
@@ -2078,9 +2081,7 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
 
   g_free (marked_up_string);
   g_ptr_array_unref (char_ranges);
-  if (is_text_outline_default(block_text_outline)) {
-      free_text_outline(block_text_outline);
-  }
+  free_text_outline (block_text_outline);
   GST_CAT_DEBUG (ttmlrender, "block width: %u   block height: %u",
       ret->width, ret->height);
   return ret;

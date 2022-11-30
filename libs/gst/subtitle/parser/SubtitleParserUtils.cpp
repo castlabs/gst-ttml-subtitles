@@ -34,7 +34,11 @@ namespace {
 
 		void setCLengthExpression(CLengthExpression** expression, timedText::LengthExpression tt_expression) 
 		{
-			*expression = create_length_expression(tt_expression.value, static_cast<CLengthUnit>(tt_expression.unit), static_cast<COrientation>(tt_expression.orientation));			
+			*expression = writable_length_expression(*expression);
+			auto original_len_expr = reinterpret_cast<timedText::LengthExpression*> (*expression);
+			original_len_expr->value = tt_expression.value;
+			original_len_expr->unit = tt_expression.unit;
+			original_len_expr->orientation = tt_expression.orientation;
 		};
 
 		void updateRegionStyleSet(GstSubtitleStyleSet* style_set, const timedText::RegionStyle& tt_style_set)

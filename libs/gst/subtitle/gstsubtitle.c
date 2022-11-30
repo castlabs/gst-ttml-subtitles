@@ -52,10 +52,14 @@ gst_subtitle_style_set_new ()
   ret->color = white;
   ret->background_color = transparent;
   ret->line_padding = 0.0;
-  ret->origin.x = ret->origin.y = create_length_expression_from_value(0.0);
-  ret->extent.x = ret->extent.y = create_length_expression_from_value(0.0);
-  ret->padding.bottom = ret->padding.left
-      = ret->padding.right = ret->padding.top = create_length_expression_from_value(0.0);   
+  ret->origin.x =
+    ret->origin.y =
+    ret->extent.x =
+    ret->extent.y =
+    ret->padding.bottom =
+    ret->padding.left =
+    ret->padding.right =
+    ret->padding.top = default_length_expression();
   ret->text_decoration.isLineThrough = false;
   ret->text_decoration.isOverline = false;
   ret->text_decoration.isUnderline = false;
@@ -84,8 +88,7 @@ void gst_subtitle_style_set_free (GstSubtitleStyleSet * style_set)
   free_length_expression(style_set->padding.left);
   free_length_expression(style_set->padding.right);
   free_length_expression(style_set->padding.top);
-  free_length_expression(style_set->padding.top);
-  free_text_outline(style_set->text_outline);
+  free_text_outline (style_set->text_outline);
   g_slice_free (GstSubtitleStyleSet, style_set);
 }
 

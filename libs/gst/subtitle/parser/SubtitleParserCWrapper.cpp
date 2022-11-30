@@ -22,7 +22,7 @@ extern "C"
 		GList* ret = NULL;
 
 		for (auto subtitle : subtitles) {
-			ret = g_list_append(ret, gst_buffer_ref(subtitle));
+			ret = g_list_append(ret, subtitle);
 		}
 		
 		return ret;
@@ -32,4 +32,5 @@ extern "C"
 		SubtitleParser::Parser* parser = reinterpret_cast<SubtitleParser::Parser*>(c_parser);
 		delete parser;
 	}
-}
+
+  }
