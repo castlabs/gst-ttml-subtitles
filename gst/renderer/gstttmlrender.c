@@ -404,6 +404,8 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
     }
   }
 
+  render->attach_compo_to_buffer = attach;
+
   if (!ret) {
     GST_DEBUG_OBJECT (render, "negotiation failed, schedule reconfigure");
     gst_pad_mark_reconfigure (render->srcpad);
@@ -453,7 +455,8 @@ gst_ttml_render_setcaps (GstTtmlRender * render, GstCaps * caps)
 
   GST_TTML_RENDER_LOCK (render);
   g_mutex_lock (GST_TTML_RENDER_GET_CLASS (render)->pango_lock);
-  if (!gst_ttml_render_can_handle_caps (caps)) {
+  if (!render->attach_compo_to_buffer &&
+      !gst_ttml_render_can_handle_caps (caps)) {
     GST_DEBUG_OBJECT (render, "unsupported caps %" GST_PTR_FORMAT, caps);
     ret = FALSE;
   }
@@ -747,6 +750,15 @@ gst_ttml_render_push_frame (GstTtmlRender * render,
     gst_ttml_render_negotiate (render, NULL);
 
   video_frame = gst_buffer_make_writable (video_frame);
+
+  if (render->attach_compo_to_buffer) {
+    while (compositions) {
+      GstVideoOverlayComposition *composition = compositions->data;
+      gst_buffer_add_video_overlay_composition_meta(video_frame, composition);
+      compositions = compositions->next;
+    }
+    goto done;
+  }
 
   if (!gst_video_frame_map (&frame, &render->info, video_frame,
           GST_MAP_READWRITE))
