@@ -1637,7 +1637,17 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
 
       GstBuffer *op_buffer = subtitle->data;
       if (self->segment.position > GST_BUFFER_PTS (op_buffer) + GST_BUFFER_DURATION(op_buffer)) {
-        gst_buffer_unref (op_buffer);
+        if (!subtitle->next) {
+
+          // notify that renderer shouldn't expect more subtitle buffers
+          // if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
+          GstClockTime last_subtitle_end_time = op_buffer->pts + op_buffer->duration;
+          if (buf_end_time > last_subtitle_end_time) {
+            GstEvent *event = gst_event_new_gap (last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
+            gst_pad_push_event (self->srcpad, event);
+          }
+          break;
+        }
         continue;
       }
       self->segment.position = GST_BUFFER_PTS (op_buffer);
