@@ -1636,9 +1636,25 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
       }
 
       GstBuffer *op_buffer = subtitle->data;
-      if (self->segment.position > GST_BUFFER_PTS (op_buffer) + GST_BUFFER_DURATION(op_buffer)) {
-        if (!subtitle->next) {
 
+      gboolean is_buf_sent_flow_ok = FALSE;
+      if (GST_BUFFER_PTS (op_buffer) + GST_BUFFER_DURATION(op_buffer) >= self->segment.position) {
+        self->segment.position = GST_BUFFER_PTS (op_buffer);
+
+        GST_DEBUG_OBJECT (self, "Sending buffer %p, %" G_GUINT64_FORMAT " %" G_GUINT64_FORMAT,
+            op_buffer, GST_BUFFER_PTS (op_buffer),
+            GST_BUFFER_DURATION (op_buffer));
+
+        ret = gst_pad_push (self->srcpad, op_buffer);
+        if (ret != GST_FLOW_OK) {
+          GST_DEBUG_OBJECT (self, "flow: %s", gst_flow_get_name (ret));
+        } else {
+          is_buf_sent_flow_ok = TRUE;
+        }
+      }
+
+      if (is_buf_sent_flow_ok || self->segment.position > GST_BUFFER_PTS (op_buffer) + GST_BUFFER_DURATION(op_buffer)) {
+        if (!subtitle->next) {
           // notify that renderer shouldn't expect more subtitle buffers
           // if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
           GstClockTime last_subtitle_end_time = op_buffer->pts + op_buffer->duration;
@@ -1646,26 +1662,9 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
             GstEvent *event = gst_event_new_gap (last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
             gst_pad_push_event (self->srcpad, event);
           }
-          break;
-        }
-        continue;
-      }
-      self->segment.position = GST_BUFFER_PTS (op_buffer);
-
-      GST_DEBUG_OBJECT (self, "Sending buffer %p, %" G_GUINT64_FORMAT " %" G_GUINT64_FORMAT,
-          op_buffer, GST_BUFFER_PTS (op_buffer),
-          GST_BUFFER_DURATION (op_buffer));
-
-      ret = gst_pad_push (self->srcpad, op_buffer);
-      if (ret != GST_FLOW_OK)
-        GST_DEBUG_OBJECT (self, "flow: %s", gst_flow_get_name (ret));
-      else if (!subtitle->next) {
-        // notify that renderer shouldn't expect more subtitle buffers
-        // if the last buffer end time less than end time of the whole subtitle segment(in terms of timedText lib)
-        GstClockTime last_subtitle_end_time = op_buffer->pts + op_buffer->duration;
-        if (buf_end_time > last_subtitle_end_time) {
-          GstEvent *event = gst_event_new_gap (last_subtitle_end_time, buf_end_time - last_subtitle_end_time);
-          gst_pad_push_event (self->srcpad, event);
+          if(!is_buf_sent_flow_ok) break;
+        } else if(!is_buf_sent_flow_ok) {
+          gst_buffer_unref (op_buffer);
         }
       }
     }
