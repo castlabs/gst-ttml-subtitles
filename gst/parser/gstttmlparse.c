@@ -1651,8 +1651,8 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
         } else {
           if (subtitle->next)
             continue;
-          op_buffer = NULL;
         }
+        op_buffer = NULL;
       }
       if (op_buffer)
         gst_buffer_unref (op_buffer);
