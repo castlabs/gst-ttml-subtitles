@@ -108,7 +108,8 @@ struct _GstTtmlRender {
     gboolean                 need_render;
 
     gboolean                 attach_compo_to_buffer;
-    GList * compositions;
+
+    GstVideoOverlayComposition *composition;
 };
 
 struct _GstTtmlRenderClass {

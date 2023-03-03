@@ -231,10 +231,9 @@ gst_ttml_render_finalize (GObject * object)
 {
   GstTtmlRender *render = GST_TTML_RENDER (object);
 
-  if (render->compositions) {
-    g_list_free_full (render->compositions,
-        (GDestroyNotify) gst_video_overlay_composition_unref);
-    render->compositions = NULL;
+  if (render->composition) {
+    gst_video_overlay_composition_unref(render->composition);
+    render->composition = NULL;
   }
 
   if (render->text_buffer) {
@@ -302,7 +301,7 @@ gst_ttml_render_init (GstTtmlRender * render,
   render->text_buffer = NULL;
   render->text_linked = FALSE;
 
-  render->compositions = NULL;
+  render->composition = NULL;
 
   g_mutex_init (&render->lock);
   g_cond_init (&render->cond);
@@ -325,6 +324,9 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   gboolean allocation_ret = TRUE;
 
   GST_DEBUG_OBJECT (render, "performing negotiation");
+
+  /* Clear any pending reconfigure to avoid negotiating twice */
+  gst_pad_check_reconfigure (render->srcpad);
 
   if (!caps)
     caps = gst_pad_get_current_caps (render->video_sinkpad);
@@ -739,9 +741,8 @@ gst_ttml_render_push_frame (GstTtmlRender * render,
     GstBuffer * video_frame)
 {
   GstVideoFrame frame;
-  GList *compositions = render->compositions;
 
-  if (compositions == NULL) {
+  if (render->composition == NULL) {
     GST_CAT_DEBUG (ttmlrender, "No compositions.");
     goto done;
   }
@@ -752,11 +753,7 @@ gst_ttml_render_push_frame (GstTtmlRender * render,
   video_frame = gst_buffer_make_writable (video_frame);
 
   if (render->attach_compo_to_buffer) {
-    while (compositions) {
-      GstVideoOverlayComposition *composition = compositions->data;
-      gst_buffer_add_video_overlay_composition_meta(video_frame, composition);
-      compositions = compositions->next;
-    }
+    gst_buffer_add_video_overlay_composition_meta(video_frame, render->composition);
     goto done;
   }
 
@@ -764,11 +761,7 @@ gst_ttml_render_push_frame (GstTtmlRender * render,
           GST_MAP_READWRITE))
     goto invalid_frame;
 
-  while (compositions) {
-    GstVideoOverlayComposition *composition = compositions->data;
-    gst_video_overlay_composition_blend (composition, &frame);
-    compositions = compositions->next;
-  }
+  gst_video_overlay_composition_blend (render->composition, &frame);
 
   gst_video_frame_unmap (&frame);
 
@@ -1216,9 +1209,9 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
     g_ptr_array_unref (*text_ranges);
   *text_ranges =
     g_ptr_array_new_full (element_count, (GDestroyNotify) _text_range_free);
-  
+
   bool no_text_outline = false;
-  guint text_outline_index = -1;  
+  guint text_outline_index = -1;
   for (i = 0; i < element_count; ++i) {
     TextRange *range = g_slice_new0 (TextRange);
     element = gst_subtitle_block_get_element (block, i);
@@ -1266,9 +1259,9 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
       "Monospace" : element->style_set->font_family;
 
     if(element->style_set->font_style == GST_SUBTITLE_FONT_STYLE_ITALIC)
-        font_style = "italic"; 
+        font_style = "italic";
     else if(element->style_set->font_style == GST_SUBTITLE_FONT_STYLE_OBLIQUE)
-        font_style = "oblique"; 
+        font_style = "oblique";
     else
         font_style = "normal";
 
@@ -1281,9 +1274,9 @@ gst_ttml_render_generate_marked_up_string (GstTtmlRender * render,
     //not supported yet
     //since pango 1.46
     //overline = (element->style_set->text_decoration.isOverline ? "single" : "none");
-    
+
     strikethrough = (element->style_set->text_decoration.isLineThrough ? "true" : "false");
- 
+
     old_text = joined_text;
     joined_text = g_strconcat (joined_text,
         "<span "
@@ -2058,7 +2051,7 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
 
   //composition with region opacity
   block->style_set->background_color.a *= opacity;
-  /* Render background rectangles, if any. */    
+  /* Render background rectangles, if any. */
   backgrounds = gst_ttml_render_render_element_backgrounds(render, block, char_ranges,
       rendered_text->layout, text_offset - line_padding, 0,
       //(guint) (block->style_set->line_height * max_font_size),
@@ -2100,8 +2093,8 @@ gst_ttml_render_render_text_block (GstTtmlRender * render,
 }
 
 
-static GstVideoOverlayComposition *
-gst_ttml_render_compose_overlay (GstTtmlRenderRenderedImage * image)
+static void
+gst_ttml_render_compose_overlay (GstTtmlRender * render, GstTtmlRenderRenderedImage * image)
 {
   GstVideoOverlayRectangle *rectangle;
   GstVideoOverlayComposition *ret = NULL;
@@ -2113,13 +2106,16 @@ gst_ttml_render_compose_overlay (GstTtmlRenderRenderedImage * image)
       image->y, image->width, image->height,
       GST_VIDEO_OVERLAY_FORMAT_FLAG_PREMULTIPLIED_ALPHA);
 
-  ret = gst_video_overlay_composition_new (rectangle);
+  if(!render->composition) {
+    render->composition = gst_video_overlay_composition_new (rectangle);
+  } else {
+    gst_video_overlay_composition_add_rectangle (render->composition, rectangle);
+  }
   gst_video_overlay_rectangle_unref (rectangle);
-  return ret;
 }
 
 
-static GstVideoOverlayComposition *
+static void
 gst_ttml_render_render_text_region (GstTtmlRender * render,
     GstSubtitleRegion * region, GstBuffer * text_buf)
 {
@@ -2162,7 +2158,7 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
 
   //opacity composition
   region->style_set->background_color.a *= region->style_set->opacity;
-  
+
   GST_CAT_DEBUG (ttmlrender,
       "Padding: start: %u  end: %u  before: %u  after: %u",
       padding_start, padding_end, padding_before, padding_after);
@@ -2230,14 +2226,13 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
   }
 
   if (!region_image)
-    return NULL;
+    return;
 
   GST_CAT_DEBUG (ttmlrender, "Height of rendered region: %u",
       region_image->height);
 
-  ret = gst_ttml_render_compose_overlay (region_image);
+  gst_ttml_render_compose_overlay (render, region_image);
   gst_ttml_render_rendered_image_free (region_image);
-  return ret;
 }
 
 
@@ -2386,10 +2381,9 @@ wait_for_text_buf:
           GstSubtitleMeta *subtitle_meta = NULL;
           guint i;
 
-          if (render->compositions) {
-            g_list_free_full (render->compositions,
-                (GDestroyNotify) gst_video_overlay_composition_unref);
-            render->compositions = NULL;
+          if (render->composition) {
+            gst_video_overlay_composition_unref(render->composition);
+            render->composition = NULL;
           }
 
           subtitle_meta = gst_buffer_get_subtitle_meta (render->text_buffer);
@@ -2399,11 +2393,8 @@ wait_for_text_buf:
             GstVideoOverlayComposition *composition;
             region = g_ptr_array_index (subtitle_meta->regions, i);
             g_assert (region != NULL);
-            composition = gst_ttml_render_render_text_region (render, region,
+            gst_ttml_render_render_text_region (render, region,
                 render->text_buffer);
-            if (composition)
-                render->compositions = g_list_append (render->compositions,
-                    composition);
           }
           render->need_render = FALSE;
         }
