@@ -2097,7 +2097,6 @@ static void
 gst_ttml_render_compose_overlay (GstTtmlRender * render, GstTtmlRenderRenderedImage * image)
 {
   GstVideoOverlayRectangle *rectangle;
-  GstVideoOverlayComposition *ret = NULL;
 
   gst_buffer_add_video_meta (image->image, GST_VIDEO_FRAME_FLAG_NONE,
       GST_VIDEO_OVERLAY_COMPOSITION_FORMAT_RGB, image->width, image->height);
@@ -2125,7 +2124,6 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
   guint padding_start, padding_end, padding_before, padding_after;
   GstTtmlRenderRenderedImage *region_image = NULL;
   GstTtmlRenderRenderedImage *blocks_image;
-  GstVideoOverlayComposition *ret = NULL;
   guint i;
 
   region_x = (guint)to_pixel(region->style_set->origin.x, render->width, render->height);
@@ -2390,7 +2388,6 @@ wait_for_text_buf:
           g_assert (subtitle_meta != NULL);
 
           for (i = 0; i < subtitle_meta->regions->len; ++i) {
-            GstVideoOverlayComposition *composition;
             region = g_ptr_array_index (subtitle_meta->regions, i);
             g_assert (region != NULL);
             gst_ttml_render_render_text_region (render, region,
