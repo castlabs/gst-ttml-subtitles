@@ -25,8 +25,6 @@
 #include <gst/gst.h>
 #include <gst/base/gstadapter.h>
 
-GST_DEBUG_CATEGORY_EXTERN (ttml_parse_debug);
-#define GST_CAT_DEFAULT ttml_parse_debug
 
 G_BEGIN_DECLS
 
@@ -117,6 +115,10 @@ struct _GstTtmlParseClass {
 };
 
 GType gst_ttml_parse_get_type (void);
+void gst_ttmlparse_type_find (GstTypeFind * tf, gpointer private);
+
+extern GstStaticCaps sub_caps;
+#define SUB_CAPS (gst_static_caps_get (&sub_caps))
 
 G_END_DECLS
 

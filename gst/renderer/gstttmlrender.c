@@ -57,7 +57,8 @@
 #include <stdint.h>
 #define ARRAY_LENGTH(a) (sizeof (a) / sizeof (a)[0])
 
-GST_DEBUG_CATEGORY_STATIC (ttmlrender);
+GST_DEBUG_CATEGORY_EXTERN (ttmlrender);
+#define GST_CAT_DEFAULT ttmlrender
 
 #define VIDEO_FORMATS GST_VIDEO_OVERLAY_COMPOSITION_BLEND_FORMATS
 
@@ -2533,21 +2534,3 @@ gst_ttml_render_change_state (GstElement * element,
 
   return ret;
 }
-
-static gboolean
-plugin_init (GstPlugin * plugin)
-{
-  GST_DEBUG_CATEGORY_INIT (ttmlrender, "ttmlrender", 0, "TTML renderer");
-
-  if (!gst_element_register (plugin, "ttmlrender", GST_RANK_PRIMARY,
-          GST_TYPE_TTML_RENDER)) {
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
-    ttmlrender, "Pango-based text rendering, supporting the EBU-TT-D profile"
-    " of TTML.", plugin_init,
-    VERSION, "LGPL", "gst-ttml-render", "http://www.bbc.co.uk/rd")
