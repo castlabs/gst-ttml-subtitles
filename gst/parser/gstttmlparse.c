@@ -123,8 +123,8 @@ static GstFlowReturn gst_ttml_parse_chain (GstPad * sinkpad, GstObject * parent,
     GstBuffer * buf);
 
 #define gst_ttml_parse_parent_class parent_class
-
 G_DEFINE_TYPE (GstClTtmlParse, gst_ttml_parse, GST_TYPE_ELEMENT);
+
 /* alias old type names, for convenience */
 typedef GstClTtmlParse GstTtmlParse;
 typedef GstClTtmlParseClass GstTtmlParseClass;

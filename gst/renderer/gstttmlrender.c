@@ -173,7 +173,7 @@ gst_ttml_render_get_type (void)
     };
 
     g_once_init_leave ((gsize *) & type,
-        g_type_register_static (GST_TYPE_ELEMENT, "GstTtmlRender", &info,
+        g_type_register_static (GST_TYPE_ELEMENT, "GstClTtmlRender", &info,
             0));
   }
 

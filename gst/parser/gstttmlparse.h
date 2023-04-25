@@ -41,6 +41,7 @@ G_BEGIN_DECLS
 
 typedef struct _GstClTtmlParse GstClTtmlParse;
 typedef struct _GstClTtmlParseClass GstClTtmlParseClass;
+
 /* format enum */
 typedef enum
 {
