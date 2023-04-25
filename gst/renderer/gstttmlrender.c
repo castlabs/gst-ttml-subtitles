@@ -100,6 +100,10 @@ GST_STATIC_PAD_TEMPLATE ("text_sink",
 #define GST_TTML_RENDER_SIGNAL(ov)   (g_cond_signal (GST_TTML_RENDER_GET_COND (ov)))
 #define GST_TTML_RENDER_BROADCAST(ov)(g_cond_broadcast (GST_TTML_RENDER_GET_COND (ov)))
 
+/* alias old type names, for convenience */
+typedef GstClTtmlRender GstTtmlRender;
+typedef GstClTtmlRenderClass GstTtmlRenderClass;
+
 static GstElementClass *parent_class = NULL;
 static void gst_ttml_render_base_init (gpointer g_class);
 static void gst_ttml_render_class_init (GstTtmlRenderClass * klass);

@@ -31,17 +31,16 @@ G_BEGIN_DECLS
 #define GST_TYPE_TTMLPARSE \
   (gst_ttml_parse_get_type ())
 #define GST_TTMLPARSE(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_TTMLPARSE, GstTtmlParse))
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_TTMLPARSE, GstClTtmlParse))
 #define GST_TTMLPARSE_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_TTMLPARSE, GstTtmlParseClass))
+  (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_TTMLPARSE, GstClTtmlParseClass))
 #define GST_IS_TTMLPARSE(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_TTMLPARSE))
 #define GST_IS_TTMLPARSE_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_TTMLPARSE))
 
-typedef struct _GstTtmlParse GstTtmlParse;
-typedef struct _GstTtmlParseClass GstTtmlParseClass;
-
+typedef struct _GstClTtmlParse GstClTtmlParse;
+typedef struct _GstClTtmlParseClass GstClTtmlParseClass;
 /* format enum */
 typedef enum
 {
@@ -73,7 +72,7 @@ typedef struct {
 
 typedef gchar* (*Parser) (ParserState *state, const gchar *line);
 
-struct _GstTtmlParse {
+struct _GstClTtmlParse {
   GstElement element;
 
   GstPad *sinkpad,*srcpad;
@@ -110,7 +109,7 @@ struct _GstTtmlParse {
   gboolean forced_only;
 };
 
-struct _GstTtmlParseClass {
+struct _GstClTtmlParseClass {
   GstElementClass parent_class;
 };
 
