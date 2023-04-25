@@ -62,7 +62,8 @@
 #include "ttmlparse.h"
 #include "gst/subtitle/parser/SubtitleParserCWrapper.h"
 
-GST_DEBUG_CATEGORY (ttml_parse_debug);
+GST_DEBUG_CATEGORY_EXTERN (ttml_parse_debug);
+#define GST_CAT_DEFAULT ttml_parse_debug
 
 #define DEFAULT_ENCODING   NULL
 
@@ -122,7 +123,11 @@ static GstFlowReturn gst_ttml_parse_chain (GstPad * sinkpad, GstObject * parent,
     GstBuffer * buf);
 
 #define gst_ttml_parse_parent_class parent_class
-G_DEFINE_TYPE (GstTtmlParse, gst_ttml_parse, GST_TYPE_ELEMENT);
+G_DEFINE_TYPE (GstClTtmlParse, gst_ttml_parse, GST_TYPE_ELEMENT);
+
+/* alias old type names, for convenience */
+typedef GstClTtmlParse GstTtmlParse;
+typedef GstClTtmlParseClass GstTtmlParseClass;
 
 static void
 gst_ttml_parse_dispose (GObject * object)
@@ -1862,14 +1867,13 @@ gst_ttml_parse_change_state (GstElement * element, GstStateChange transition)
  * also, give different  subtitle formats really different types */
 static GstStaticCaps mpl2_caps =
 GST_STATIC_CAPS ("application/x-subtitle-mpl2");
-#define SUB_CAPS (gst_static_caps_get (&sub_caps))
+#define MPL2_CAPS (gst_static_caps_get (&mpl2_caps))
 
 static GstStaticCaps tmp_caps =
 GST_STATIC_CAPS ("application/x-subtitle-tmplayer");
 #define TMP_CAPS (gst_static_caps_get (&tmp_caps))
 
-static GstStaticCaps sub_caps = GST_STATIC_CAPS ("application/x-subtitle");
-#define MPL2_CAPS (gst_static_caps_get (&mpl2_caps))
+GstStaticCaps sub_caps = GST_STATIC_CAPS ("application/x-subtitle");
 
 static GstStaticCaps smi_caps = GST_STATIC_CAPS ("application/x-subtitle-sami");
 #define SAMI_CAPS (gst_static_caps_get (&smi_caps))
@@ -1888,8 +1892,7 @@ static GstStaticCaps ttml_caps = GST_STATIC_CAPS ("application/ttml+xml");
 #define TTML_CAPS (gst_static_caps_get (&ttml_caps))
 
 
-static void
-gst_ttmlparse_type_find (GstTypeFind * tf, gpointer private)
+void gst_ttmlparse_type_find (GstTypeFind * tf, gpointer private)
 {
   GstTtmlParseFormat format;
   const guint8 *data;
@@ -2006,27 +2009,3 @@ gst_ttmlparse_type_find (GstTypeFind * tf, gpointer private)
   /* if we're here, it's ok */
   gst_type_find_suggest (tf, GST_TYPE_FIND_MAXIMUM, caps);
 }
-
-static gboolean
-plugin_init (GstPlugin * plugin)
-{
-  GST_DEBUG_CATEGORY_INIT (ttml_parse_debug, "ttmlparse", 0, "TTML parser");
-
-  if (!gst_type_find_register (plugin, "ttmlparse_typefind", GST_RANK_MARGINAL,
-          gst_ttmlparse_type_find, "srt,sub,mpsub,mdvd,smi,txt,dks,ttml",
-          SUB_CAPS, NULL, NULL))
-    return FALSE;
-
-  if (!gst_element_register (plugin, "ttmlparse",
-          GST_RANK_PRIMARY, GST_TYPE_TTMLPARSE)) {
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    ttmlparse,
-    "Subtitle parsing, including EBU-TT-D profile of TTML.",
-    plugin_init, VERSION, "LGPL", "gst-ttml", "http://www.bbc.co.uk/rd")

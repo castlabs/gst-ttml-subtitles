@@ -34,20 +34,20 @@ G_BEGIN_DECLS
 
 #define GST_TYPE_TTML_RENDER            (gst_ttml_render_get_type())
 #define GST_TTML_RENDER(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj),\
-                                         GST_TYPE_TTML_RENDER, GstTtmlRender))
+                                         GST_TYPE_TTML_RENDER, GstClTtmlRender))
 #define GST_TTML_RENDER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass),\
                                          GST_TYPE_TTML_RENDER, \
-                                         GstTtmlRenderClass))
+                                         GstClTtmlRenderClass))
 #define GST_TTML_RENDER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),\
                                          GST_TYPE_TTML_RENDER, \
-                                         GstTtmlRenderClass))
+                                         GstClTtmlRenderClass))
 #define GST_IS_TTML_RENDER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj),\
                                          GST_TYPE_TTML_RENDER))
 #define GST_IS_TTML_RENDER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass),\
                                          GST_TYPE_TTML_RENDER))
 
-typedef struct _GstTtmlRender GstTtmlRender;
-typedef struct _GstTtmlRenderClass GstTtmlRenderClass;
+typedef struct _GstClTtmlRender GstClTtmlRender;
+typedef struct _GstClTtmlRenderClass GstClTtmlRenderClass;
 typedef struct _GstTtmlRenderRenderedImage GstTtmlRenderRenderedImage;
 typedef struct _GstTtmlRenderRenderedText GstTtmlRenderRenderedText;
 
@@ -75,7 +75,7 @@ struct _GstTtmlRenderRenderedText {
 };
 
 
-struct _GstTtmlRender {
+struct _GstClTtmlRender {
     GstElement               element;
 
     GstPad                  *video_sinkpad;
@@ -112,7 +112,7 @@ struct _GstTtmlRender {
     GstVideoOverlayComposition *composition;
 };
 
-struct _GstTtmlRenderClass {
+struct _GstClTtmlRenderClass {
     GstElementClass parent_class;
 
     PangoContext *pango_context;

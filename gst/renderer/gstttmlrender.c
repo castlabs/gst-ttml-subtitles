@@ -57,7 +57,8 @@
 #include <stdint.h>
 #define ARRAY_LENGTH(a) (sizeof (a) / sizeof (a)[0])
 
-GST_DEBUG_CATEGORY_STATIC (ttmlrender);
+GST_DEBUG_CATEGORY_EXTERN (ttmlrender);
+#define GST_CAT_DEFAULT ttmlrender
 
 #define VIDEO_FORMATS GST_VIDEO_OVERLAY_COMPOSITION_BLEND_FORMATS
 
@@ -98,6 +99,10 @@ GST_STATIC_PAD_TEMPLATE ("text_sink",
 #define GST_TTML_RENDER_WAIT(ov)     (g_cond_wait (GST_TTML_RENDER_GET_COND (ov), GST_TTML_RENDER_GET_LOCK (ov)))
 #define GST_TTML_RENDER_SIGNAL(ov)   (g_cond_signal (GST_TTML_RENDER_GET_COND (ov)))
 #define GST_TTML_RENDER_BROADCAST(ov)(g_cond_broadcast (GST_TTML_RENDER_GET_COND (ov)))
+
+/* alias old type names, for convenience */
+typedef GstClTtmlRender GstTtmlRender;
+typedef GstClTtmlRenderClass GstTtmlRenderClass;
 
 static GstElementClass *parent_class = NULL;
 static void gst_ttml_render_base_init (gpointer g_class);
@@ -168,7 +173,7 @@ gst_ttml_render_get_type (void)
     };
 
     g_once_init_leave ((gsize *) & type,
-        g_type_register_static (GST_TYPE_ELEMENT, "GstTtmlRender", &info,
+        g_type_register_static (GST_TYPE_ELEMENT, "GstClTtmlRender", &info,
             0));
   }
 
@@ -2533,21 +2538,3 @@ gst_ttml_render_change_state (GstElement * element,
 
   return ret;
 }
-
-static gboolean
-plugin_init (GstPlugin * plugin)
-{
-  GST_DEBUG_CATEGORY_INIT (ttmlrender, "ttmlrender", 0, "TTML renderer");
-
-  if (!gst_element_register (plugin, "ttmlrender", GST_RANK_PRIMARY,
-          GST_TYPE_TTML_RENDER)) {
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
-    ttmlrender, "Pango-based text rendering, supporting the EBU-TT-D profile"
-    " of TTML.", plugin_init,
-    VERSION, "LGPL", "gst-ttml-render", "http://www.bbc.co.uk/rd")
