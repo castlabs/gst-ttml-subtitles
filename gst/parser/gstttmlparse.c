@@ -1577,6 +1577,9 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
     self->state.fps_d = self->fps_d;
   }
 
+  /* Calculate end time before the buffer is freed in feed_textbuf() */
+  GstClockTime buf_end_time = buf->pts + buf->duration;
+
   feed_textbuf (self, buf);
 
   /* make sure we know the format */
@@ -1625,9 +1628,6 @@ handle_buffer (GstTtmlParse * self, GstBuffer * buf)
       return GST_FLOW_OK;
     }
 
-    //? for some reason gst_buffer_new gives buf address for the new buffer in getSubtitleList()
-    //so we store needed buf data here
-    GstClockTime buf_end_time = buf->pts + buf->duration;
     GList *subtitle_list = get_subtitles(subs_parser);
 
     g_timer_stop (timer);
