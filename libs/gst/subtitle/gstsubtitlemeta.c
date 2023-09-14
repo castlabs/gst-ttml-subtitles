@@ -31,7 +31,7 @@
 GType
 gst_subtitle_meta_api_get_type (void)
 {
-  static volatile GType type;
+  static GType type;
   static const gchar *tags[] = { "memory", NULL };
 
   if (g_once_init_enter (&type)) {
@@ -62,7 +62,7 @@ gst_subtitle_meta_free (GstMeta * meta, GstBuffer * buffer)
 const GstMetaInfo *
 gst_subtitle_meta_get_info (void)
 {
-  static GstMetaInfo *subtitle_meta_info = NULL;
+  static const GstMetaInfo *subtitle_meta_info = NULL;
 
   if (g_once_init_enter (&subtitle_meta_info)) {
     const GstMetaInfo *meta =
