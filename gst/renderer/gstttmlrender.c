@@ -909,16 +909,12 @@ gst_ttml_render_text_event (GstPad * pad, GstObject * parent,
       ret = TRUE;
       break;
     case GST_EVENT_STREAM_START:
-      GST_TTML_RENDER_LOCK (render);
       GST_INFO_OBJECT (render, "text stream start, do nothing");
-      GST_TTML_RENDER_UNLOCK (render);
       gst_event_unref (event);
       ret = TRUE;
       break;
     case GST_EVENT_TAG:
-      GST_TTML_RENDER_LOCK (render);
       GST_INFO_OBJECT (render, "text tag event, do nothing");
-      GST_TTML_RENDER_UNLOCK (render);
       gst_event_unref (event);
       ret = TRUE;
       break;
