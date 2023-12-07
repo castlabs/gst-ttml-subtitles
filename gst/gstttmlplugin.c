@@ -54,3 +54,24 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     clttmlsubs,
     "castLabs TTML1 subtitle handling",
     plugin_init, VERSION, "LGPL", "gst-ttml", "https://castlabs.com")
+
+#ifdef BUILD_STATIC_PLUGINS
+void register_static_clttmlplugin ()
+{
+#  if GST_CHECK_VERSION(1, 13, 0) || defined(GST_PLUGIN_BUILD_STATIC)
+  GST_PLUGIN_STATIC_REGISTER (clttmlsubs);
+#  else
+  gst_plugin_register_static (
+      gst_plugin_desc.major_version,
+      gst_plugin_desc.minor_version,
+      gst_plugin_desc.name,
+      gst_plugin_desc.description,
+      gst_plugin_desc.plugin_init,
+      gst_plugin_desc.version,
+      gst_plugin_desc.license,
+      gst_plugin_desc.source,
+      gst_plugin_desc.package,
+      gst_plugin_desc.origin);
+#  endif
+}
+#endif

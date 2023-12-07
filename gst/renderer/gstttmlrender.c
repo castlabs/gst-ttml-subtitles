@@ -908,6 +908,16 @@ gst_ttml_render_text_event (GstPad * pad, GstObject * parent,
       gst_event_unref (event);
       ret = TRUE;
       break;
+    case GST_EVENT_STREAM_START:
+      GST_INFO_OBJECT (render, "text stream start, do nothing");
+      gst_event_unref (event);
+      ret = TRUE;
+      break;
+    case GST_EVENT_TAG:
+      GST_INFO_OBJECT (render, "text tag event, do nothing");
+      gst_event_unref (event);
+      ret = TRUE;
+      break;
     default:
       ret = gst_pad_event_default (pad, parent, event);
       break;
