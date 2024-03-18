@@ -835,7 +835,7 @@ subrip_fix_up_markup (gchar ** p_txt)
         break;
       default:
         GST_ERROR ("unexpected tag '%c' (%s)", *next_tag, next_tag);
-        g_assert_not_reached ();
+        g_assert (FALSE);
         break;
     }
     cur = next_tag;
@@ -1091,7 +1091,7 @@ parse_subviewer (ParserState * state, const gchar * line)
       }
       return NULL;
     default:
-      g_assert_not_reached ();
+      g_assert (FALSE);
       return NULL;
   }
 }
@@ -1142,7 +1142,7 @@ parse_mpsub (ParserState * state, const gchar * line)
       }
       return NULL;
     default:
-      g_assert_not_reached ();
+      g_assert (FALSE);
       return NULL;
   }
 }
@@ -1209,7 +1209,7 @@ parse_dks (ParserState * state, const gchar * line)
       return ret;
     }
     default:
-      g_assert_not_reached ();
+      g_assert (FALSE);
       return NULL;
   }
 }
