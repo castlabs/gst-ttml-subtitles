@@ -328,7 +328,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   gboolean original_has_meta = FALSE;
   gboolean allocation_ret = TRUE;
 
-  GST_DEBUG_OBJECT (render, "performing negotiation");
+  GST_DEBUG_OBJECT (render, ">>> performing negotiation");
 
   /* Clear any pending reconfigure to avoid negotiating twice */
   gst_pad_check_reconfigure (render->srcpad);
@@ -345,6 +345,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
 
   /* Try to use the render meta if possible */
   f = gst_caps_get_features (caps, 0);
+  GST_DEBUG ("Caps features %p, contains overlay composition %d", f, gst_caps_features_contains (f, GST_CAPS_FEATURE_META_GST_VIDEO_OVERLAY_COMPOSITION));
 
   /* if the caps doesn't have the render meta, we query if downstream
    * accepts it before trying the version without the meta
@@ -362,6 +363,8 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
     gst_caps_features_add (f,
         GST_CAPS_FEATURE_META_GST_VIDEO_OVERLAY_COMPOSITION);
 
+    GST_DEBUG ("overlay_caps %" GST_PTR_FORMAT ", f %" GST_PTR_FORMAT, overlay_caps, f);
+
     ret = gst_pad_peer_query_accept_caps (render->srcpad, overlay_caps);
     GST_DEBUG_OBJECT (render, "Downstream accepts the render meta: %d", ret);
     if (ret) {
@@ -376,12 +379,13 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   } else {
     original_has_meta = TRUE;
   }
-  GST_DEBUG_OBJECT (render, "Using caps %" GST_PTR_FORMAT, caps);
+  GST_DEBUG_OBJECT (render, ">>> Using caps %" GST_PTR_FORMAT ", original_has_meta %d, caps_has_meta %d", caps, original_has_meta, caps_has_meta);
   ret = gst_pad_set_caps (render->srcpad, caps);
 
   if (ret) {
     /* find supported meta */
     query = gst_query_new_allocation (caps, FALSE);
+    GST_DEBUG ("caps %" GST_PTR_FORMAT ", query %" GST_PTR_FORMAT, caps, query);
 
     if (!gst_pad_peer_query (render->srcpad, query)) {
       /* no problem, we use the query defaults */
@@ -395,6 +399,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
 
     gst_query_unref (query);
   }
+  GST_DEBUG ("ret %d, allocation_ret %d, attach %d", ret, allocation_ret, attach);
 
   if (!allocation_ret && render->video_flushing) {
     ret = FALSE;
