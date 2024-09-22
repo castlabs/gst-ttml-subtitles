@@ -60,7 +60,8 @@
 GST_DEBUG_CATEGORY_EXTERN (ttmlrender);
 #define GST_CAT_DEFAULT ttmlrender
 
-#define VIDEO_FORMATS GST_VIDEO_OVERLAY_COMPOSITION_BLEND_FORMATS
+// WARN: Force NV12 in order to eliminate downstream format conversion to NV12 compatible with kmssink
+#define VIDEO_FORMATS "{ NV12 }" // GST_VIDEO_OVERLAY_COMPOSITION_BLEND_FORMATS
 
 #define TTML_RENDER_CAPS GST_VIDEO_CAPS_MAKE (VIDEO_FORMATS)
 
