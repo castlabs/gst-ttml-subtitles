@@ -345,8 +345,9 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   original_caps = caps;
 
   GstStructure const* const structure = gst_caps_get_structure (caps, 0);
-  gint overlay_composition_width, overlay_composition_height;
-  if (gst_structure_get_int (structure, "overlay-composition-width", &overlay_composition_width) && gst_structure_get_int (structure, "overlay-composition-height", &overlay_composition_height)) {
+  gint overlay_composition_width = 0, overlay_composition_height = 0;
+  if (gst_structure_get_int (structure, "overlay-composition-width", &overlay_composition_width) &&
+      gst_structure_get_int (structure, "overlay-composition-height", &overlay_composition_height)) {
     if (overlay_composition_width > 0 && overlay_composition_height > 0) {
       GST_DEBUG ("Applying downstream preference for overlay composition resolution %d x %d", overlay_composition_width, overlay_composition_height);
     }
