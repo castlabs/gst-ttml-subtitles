@@ -107,7 +107,9 @@ struct _GstClTtmlRender {
 
     gboolean                 need_render;
 
-    gboolean                 attach_compo_to_buffer;
+    gboolean attach_compo_to_buffer; /* Deliver overlay composition (as opposed to inplace blending) */
+    gint overlay_composition_width;  /* fixed overlay composition resolution if requested downstream */
+    gint overlay_composition_height;
 
     GstVideoOverlayComposition *composition;
 };
