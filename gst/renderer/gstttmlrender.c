@@ -941,7 +941,7 @@ gst_ttml_render_video_event (GstPad * pad, GstObject * parent,
 
   render = GST_TTML_RENDER (parent);
 
-  GST_DEBUG_OBJECT (pad, "received event %s", GST_EVENT_TYPE_NAME (event));
+  GST_DEBUG_OBJECT (pad, "received event %" GST_PTR_FORMAT, event);
 
   switch (GST_EVENT_TYPE (event)) {
     case GST_EVENT_CAPS:
