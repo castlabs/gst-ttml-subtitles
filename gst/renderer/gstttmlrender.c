@@ -329,7 +329,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   gboolean original_has_meta = FALSE;
   gboolean allocation_ret = TRUE;
 
-  GST_DEBUG_OBJECT (render, ">>> performing negotiation");
+  GST_DEBUG_OBJECT (render, "performing negotiation");
 
   /* Clear any pending reconfigure to avoid negotiating twice */
   gst_pad_check_reconfigure (render->srcpad);
@@ -343,6 +343,14 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
     goto no_format;
 
   original_caps = caps;
+
+  GstStructure const* const structure = gst_caps_get_structure (caps, 0);
+  gint overlay_composition_width, overlay_composition_height;
+  if (gst_structure_get_int (structure, "overlay-composition-width", &overlay_composition_width) && gst_structure_get_int (structure, "overlay-composition-height", &overlay_composition_height)) {
+    if (overlay_composition_width > 0 && overlay_composition_height > 0) {
+      GST_DEBUG ("Applying downstream preference for overlay composition resolution %d x %d", overlay_composition_width, overlay_composition_height);
+    }
+  }
 
   /* Try to use the render meta if possible */
   f = gst_caps_get_features (caps, 0);
@@ -380,7 +388,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   } else {
     original_has_meta = TRUE;
   }
-  GST_DEBUG_OBJECT (render, ">>> Using caps %" GST_PTR_FORMAT ", original_has_meta %d, caps_has_meta %d", caps, original_has_meta, caps_has_meta);
+  GST_DEBUG_OBJECT (render, "Using caps %" GST_PTR_FORMAT ", original_has_meta %d, caps_has_meta %d", caps, original_has_meta, caps_has_meta);
   ret = gst_pad_set_caps (render->srcpad, caps);
 
   if (ret) {
@@ -418,6 +426,8 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   }
 
   render->attach_compo_to_buffer = attach;
+  render->overlay_composition_width = overlay_composition_width;
+  render->overlay_composition_height = overlay_composition_height;
 
   if (!ret) {
     GST_DEBUG_OBJECT (render, "negotiation failed, schedule reconfigure");
@@ -472,6 +482,12 @@ gst_ttml_render_setcaps (GstTtmlRender * render, GstCaps * caps)
       !gst_ttml_render_can_handle_caps (caps)) {
     GST_DEBUG_OBJECT (render, "unsupported caps %" GST_PTR_FORMAT, caps);
     ret = FALSE;
+  }
+  if (ret && render->attach_compo_to_buffer) {
+    if (render->overlay_composition_width > 0 && render->overlay_composition_height > 0) {
+      render->width = render->overlay_composition_width;
+      render->height = render->overlay_composition_height;
+    }
   }
 
   g_mutex_unlock (GST_TTML_RENDER_GET_CLASS (render)->pango_lock);
@@ -932,6 +948,18 @@ gst_ttml_render_text_event (GstPad * pad, GstObject * parent,
   return ret;
 }
 
+static void 
+gst_ttml_render_overlay_composition_caps (GstTtmlRender* render, gint* width, gint* height) {
+  g_assert (render);
+  g_assert (width && height);
+  *width = render->width;
+  *height = render->height;
+  if (render->attach_compo_to_buffer && render->overlay_composition_width > 0 && render->overlay_composition_height > 0) {
+    *width = render->overlay_composition_width;
+    *height = render->overlay_composition_height;
+  }
+}
+
 static gboolean
 gst_ttml_render_video_event (GstPad * pad, GstObject * parent,
     GstEvent * event)
@@ -947,14 +975,17 @@ gst_ttml_render_video_event (GstPad * pad, GstObject * parent,
     case GST_EVENT_CAPS:
     {
       GstCaps *caps;
-      gint prev_width = render->width;
-      gint prev_height = render->height;
-
       gst_event_parse_caps (event, &caps);
+      gint current_width, current_height;
+      gst_ttml_render_overlay_composition_caps (render, &current_width, &current_height);
       ret = gst_ttml_render_setcaps (render, caps);
-      if (render->width != prev_width || render->height != prev_height) {
-        GST_DEBUG ("Render resolution changed from %d x %d to %d x %d", prev_width, prev_height, render->width, render->height);
-        render->need_render = TRUE;
+      if (ret) {
+        gint width, height;
+        gst_ttml_render_overlay_composition_caps (render, &width, &height);
+        if (width != current_width || height != current_height) {
+          GST_DEBUG ("Render resolution changed from %d x %d to %d x %d", current_width, current_height, width, height);
+          render->need_render = TRUE;
+        }
       }
       gst_event_unref (event);
       break;
