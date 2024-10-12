@@ -390,7 +390,8 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   } else {
     original_has_meta = TRUE;
   }
-  GST_DEBUG_OBJECT (render, "Using caps %" GST_PTR_FORMAT ", original_has_meta %d, caps_has_meta %d", caps, original_has_meta, caps_has_meta);
+  GST_DEBUG_OBJECT (render, "Using caps %" GST_PTR_FORMAT ", original_has_meta %d, caps_has_meta %d",
+    caps, original_has_meta, caps_has_meta);
   ret = gst_pad_set_caps (render->srcpad, caps);
 
   if (ret) {
