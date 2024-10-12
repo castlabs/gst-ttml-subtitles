@@ -348,13 +348,15 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   if (gst_structure_get_int (structure, "overlay-composition-width", &overlay_composition_width) &&
       gst_structure_get_int (structure, "overlay-composition-height", &overlay_composition_height)) {
     if (overlay_composition_width > 0 && overlay_composition_height > 0) {
-      GST_DEBUG ("Applying downstream preference for overlay composition resolution %d x %d", overlay_composition_width, overlay_composition_height);
+      GST_DEBUG ("Applying downstream preference for overlay composition resolution %d x %d",
+        overlay_composition_width, overlay_composition_height);
     }
   }
 
   /* Try to use the render meta if possible */
   f = gst_caps_get_features (caps, 0);
-  GST_DEBUG ("Caps features %" GST_PTR_FORMAT ", contains overlay composition %d", f, gst_caps_features_contains (f, GST_CAPS_FEATURE_META_GST_VIDEO_OVERLAY_COMPOSITION));
+  GST_LOG ("Caps features %" GST_PTR_FORMAT ", contains overlay composition %d", f,
+    gst_caps_features_contains (f, GST_CAPS_FEATURE_META_GST_VIDEO_OVERLAY_COMPOSITION));
 
   /* if the caps doesn't have the render meta, we query if downstream
    * accepts it before trying the version without the meta
@@ -372,7 +374,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
     gst_caps_features_add (f,
         GST_CAPS_FEATURE_META_GST_VIDEO_OVERLAY_COMPOSITION);
 
-    GST_DEBUG ("overlay_caps %" GST_PTR_FORMAT ", f %" GST_PTR_FORMAT, overlay_caps, f);
+    GST_LOG ("overlay_caps %" GST_PTR_FORMAT ", f %" GST_PTR_FORMAT, overlay_caps, f);
 
     ret = gst_pad_peer_query_accept_caps (render->srcpad, overlay_caps);
     GST_DEBUG_OBJECT (render, "Downstream accepts the render meta: %d", ret);
@@ -394,7 +396,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
   if (ret) {
     /* find supported meta */
     query = gst_query_new_allocation (caps, FALSE);
-    GST_DEBUG ("caps %" GST_PTR_FORMAT ", query %" GST_PTR_FORMAT, caps, query);
+    GST_LOG ("caps %" GST_PTR_FORMAT ", query %" GST_PTR_FORMAT, caps, query);
 
     if (!gst_pad_peer_query (render->srcpad, query)) {
       /* no problem, we use the query defaults */
@@ -408,7 +410,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
 
     gst_query_unref (query);
   }
-  GST_DEBUG ("ret %d, allocation_ret %d, attach %d", ret, allocation_ret, attach);
+  GST_LOG ("ret %d, allocation_ret %d, attach %d", ret, allocation_ret, attach);
 
   if (!allocation_ret && render->video_flushing) {
     ret = FALSE;
@@ -2283,7 +2285,8 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
   GST_CAT_DEBUG (ttmlrender, "Height of rendered region: %u",
       region_image->height);
 
-  GST_INFO ("Overlay is %d x %d over video %d x %d", region_image->width, region_image->height, render->width, render->height);
+  GST_INFO ("Overlay is %d x %d over video %d x %d",
+    region_image->width, region_image->height, render->width, render->height);
 
   gst_ttml_render_compose_overlay (render, region_image);
   gst_ttml_render_rendered_image_free (region_image);
