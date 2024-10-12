@@ -952,8 +952,10 @@ gst_ttml_render_video_event (GstPad * pad, GstObject * parent,
 
       gst_event_parse_caps (event, &caps);
       ret = gst_ttml_render_setcaps (render, caps);
-      if (render->width != prev_width || render->height != prev_height)
+      if (render->width != prev_width || render->height != prev_height) {
+        GST_DEBUG ("Render resolution changed from %d x %d to %d x %d", prev_width, prev_height, render->width, render->height);
         render->need_render = TRUE;
+      }
       gst_event_unref (event);
       break;
     }
