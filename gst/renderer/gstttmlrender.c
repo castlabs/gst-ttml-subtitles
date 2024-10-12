@@ -346,7 +346,7 @@ gst_ttml_render_negotiate (GstTtmlRender * render, GstCaps * caps)
 
   /* Try to use the render meta if possible */
   f = gst_caps_get_features (caps, 0);
-  GST_DEBUG ("Caps features %p, contains overlay composition %d", f, gst_caps_features_contains (f, GST_CAPS_FEATURE_META_GST_VIDEO_OVERLAY_COMPOSITION));
+  GST_DEBUG ("Caps features %" GST_PTR_FORMAT ", contains overlay composition %d", f, gst_caps_features_contains (f, GST_CAPS_FEATURE_META_GST_VIDEO_OVERLAY_COMPOSITION));
 
   /* if the caps doesn't have the render meta, we query if downstream
    * accepts it before trying the version without the meta
@@ -2249,6 +2249,8 @@ gst_ttml_render_render_text_region (GstTtmlRender * render,
 
   GST_CAT_DEBUG (ttmlrender, "Height of rendered region: %u",
       region_image->height);
+
+  GST_INFO ("Overlay is %d x %d over video %d x %d", region_image->width, region_image->height, render->width, render->height);
 
   gst_ttml_render_compose_overlay (render, region_image);
   gst_ttml_render_rendered_image_free (region_image);
