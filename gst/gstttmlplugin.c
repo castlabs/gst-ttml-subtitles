@@ -56,7 +56,7 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     plugin_init, VERSION, "LGPL", "gst-ttml", "https://castlabs.com")
 
 #ifdef BUILD_STATIC_PLUGINS
-void register_static_clttmlplugin ()
+void register_static_clttmlsubs_plugins ()
 {
 #  if GST_CHECK_VERSION(1, 13, 0) || defined(GST_PLUGIN_BUILD_STATIC)
   GST_PLUGIN_STATIC_REGISTER (clttmlsubs);
